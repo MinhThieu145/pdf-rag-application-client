@@ -1,0 +1,809 @@
+[
+  {
+    "pages": [
+      {
+        "page": 1,
+        "text": "                                    Provided proper attribution is provided, Google hereby grants permission to\n                                    reproduce the tables and figures in this paper solely for use in journalistic or\n                                                                                  scholarly works.\n\n                                                                Attention Is All You Need\narXiv:1706.03762v7··[cs.CL]··2·Aug·2023Ashish Vaswani∗                   Noam Shazeer∗                   Niki Parmar∗               Jakob Uszkoreit∗\n                                         Google Brain\n                                                                          Google Brain\n                                                                                                      Google Research\n                                                                                                                                    Google Research\n                                  avaswani@google.com                 noam@google.com               nikip@google.com                usz@google.com\n\n                                           Llion Jones∗                     Aidan N. Gomez∗ †                              Łukasz Kaiser∗\n                                       Google Research\n                                                                           University of Toronto\n                                                                                                                            Google Brain\n                                     llion@google.com                   aidan@cs.toronto.edu                     lukaszkaiser@google.com\n\n                                                                                  Illia Polosukhin∗ ‡\n                                                                         illia.polosukhin@gmail.com\n                                                                                       Abstract\n                                          The dominant sequence transduction models are based on complex recurrent or\n                                          convolutional neural networks that include an encoder and a decoder. The best\n                                          performing models also connect the encoder and decoder through an attention\n                                          mechanism. We propose a new simple network architecture, the Transformer,\n                                          based solely on attention mechanisms, dispensing with recurrence and convolutions\n                                          entirely. Experiments on two machine translation tasks show these models to\n                                          be superior in quality while being more parallelizable and requiring significantly\n                                          less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-\n                                          to-German translation task, improving over the existing best results, including\n                                          ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task,\n                                          our model establishes a new single-model state-of-the-art BLEU score of 41.8 after\n                                          training for 3.5 days on eight GPUs, a small fraction of the training costs of the\n                                          best models from the literature. We show that the Transformer generalizes well to\n                                          other tasks by applying it successfully to English constituency parsing both with\n                                          large and limited training data.\n                                   ∗Equal contribution. Listing order is random. Jakob proposed replacing RNNs with self-attention and started\n                               the effort to evaluate this idea. Ashish, with Illia, designed and implemented the first Transformer models and\n                               has been crucially involved in every aspect of this work. Noam proposed scaled dot-product attention, multi-head\n                               attention and the parameter-free position representation and became the other person involved in nearly every\n                               detail. Niki designed, implemented, tuned and evaluated countless model variants in our original codebase and\n                               tensor2tensor. Llion also experimented with novel model variants, was responsible for our initial codebase, and\n                               efficient inference and visualizations. Lukasz and Aidan spent countless long days designing various parts of and\n                               implementing tensor2tensor, replacing our earlier codebase, greatly improving results and massively accelerating\n                               our research.†Work performed while at Google Brain.\n                                   ‡Work performed while at Google Research.\n\n                               31st Conference on Neural Information Processing Systems (NIPS 2017), Long Beach, CA, USA.",
+        "md": "Provided proper attribution is provided, Google hereby grants permission to reproduce the tables and figures in this paper solely for use in journalistic or scholarly works.\n\n# Attention Is All You Need\n\narXiv:1706.03762v7 · [cs.CL] · 2 Aug 2023\n\nAshish Vaswani∗\n\nNoam Shazeer∗\n\nNiki Parmar∗\n\nJakob Uszkoreit∗\n\nGoogle Brain\n\nGoogle Brain\n\nGoogle Research\n\nGoogle Research\n\navaswani@google.com\n\nnoam@google.com\n\nnikip@google.com\n\nusz@google.com\n\nLlion Jones∗\n\nAidan N. Gomez∗ †\n\nŁukasz Kaiser∗\n\nGoogle Research\n\nUniversity of Toronto\n\nGoogle Brain\n\nllion@google.com\n\naidan@cs.toronto.edu\n\nlukaszkaiser@google.com\n\nIllia Polosukhin∗ ‡\n\nillia.polosukhin@gmail.com\n\n# Abstract\n\nThe dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.\n\n∗Equal contribution. Listing order is random. Jakob proposed replacing RNNs with self-attention and started the effort to evaluate this idea. Ashish, with Illia, designed and implemented the first Transformer models and has been crucially involved in every aspect of this work. Noam proposed scaled dot-product attention, multi-head attention and the parameter-free position representation and became the other person involved in nearly every detail. Niki designed, implemented, tuned and evaluated countless model variants in our original codebase and tensor2tensor. Llion also experimented with novel model variants, was responsible for our initial codebase, and efficient inference and visualizations. Lukasz and Aidan spent countless long days designing various parts of and implementing tensor2tensor, replacing our earlier codebase, greatly improving results and massively accelerating our research.\n\n†Work performed while at Google Brain.\n\n‡Work performed while at Google Research.\n\n31st Conference on Neural Information Processing Systems (NIPS 2017), Long Beach, CA, USA.",
+        "images": [
+          {
+            "name": "page_1.jpg",
+            "height": 792,
+            "width": 612,
+            "x": 0,
+            "y": 0,
+            "original_width": 1236,
+            "original_height": 1600,
+            "type": "full_page_screenshot"
+          }
+        ],
+        "charts": [],
+        "items": [
+          {
+            "type": "text",
+            "value": "Provided proper attribution is provided, Google hereby grants permission to reproduce the tables and figures in this paper solely for use in journalistic or scholarly works.",
+            "md": "Provided proper attribution is provided, Google hereby grants permission to reproduce the tables and figures in this paper solely for use in journalistic or scholarly works.",
+            "bBox": {
+              "x": 124,
+              "y": 71,
+              "w": 363.58,
+              "h": 39.96
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Attention Is All You Need",
+            "md": "# Attention Is All You Need",
+            "bBox": {
+              "x": 211,
+              "y": 146,
+              "w": 188.41,
+              "h": 17.22
+            }
+          },
+          {
+            "type": "text",
+            "value": "arXiv:1706.03762v7 · [cs.CL] · 2 Aug 2023\n\nAshish Vaswani∗\n\nNoam Shazeer∗\n\nNiki Parmar∗\n\nJakob Uszkoreit∗\n\nGoogle Brain\n\nGoogle Brain\n\nGoogle Research\n\nGoogle Research\n\navaswani@google.com\n\nnoam@google.com\n\nnikip@google.com\n\nusz@google.com\n\nLlion Jones∗\n\nAidan N. Gomez∗ †\n\nŁukasz Kaiser∗\n\nGoogle Research\n\nUniversity of Toronto\n\nGoogle Brain\n\nllion@google.com\n\naidan@cs.toronto.edu\n\nlukaszkaiser@google.com\n\nIllia Polosukhin∗ ‡\n\nillia.polosukhin@gmail.com",
+            "md": "arXiv:1706.03762v7 · [cs.CL] · 2 Aug 2023\n\nAshish Vaswani∗\n\nNoam Shazeer∗\n\nNiki Parmar∗\n\nJakob Uszkoreit∗\n\nGoogle Brain\n\nGoogle Brain\n\nGoogle Research\n\nGoogle Research\n\navaswani@google.com\n\nnoam@google.com\n\nnikip@google.com\n\nusz@google.com\n\nLlion Jones∗\n\nAidan N. Gomez∗ †\n\nŁukasz Kaiser∗\n\nGoogle Research\n\nUniversity of Toronto\n\nGoogle Brain\n\nllion@google.com\n\naidan@cs.toronto.edu\n\nlukaszkaiser@google.com\n\nIllia Polosukhin∗ ‡\n\nillia.polosukhin@gmail.com",
+            "bBox": {
+              "x": 116,
+              "y": 233,
+              "w": 381.08,
+              "h": 370.98
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Abstract",
+            "md": "# Abstract",
+            "bBox": {
+              "x": 283,
+              "y": 384,
+              "w": 44.49,
+              "h": 11.96
+            }
+          },
+          {
+            "type": "text",
+            "value": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.\n\n∗Equal contribution. Listing order is random. Jakob proposed replacing RNNs with self-attention and started the effort to evaluate this idea. Ashish, with Illia, designed and implemented the first Transformer models and has been crucially involved in every aspect of this work. Noam proposed scaled dot-product attention, multi-head attention and the parameter-free position representation and became the other person involved in nearly every detail. Niki designed, implemented, tuned and evaluated countless model variants in our original codebase and tensor2tensor. Llion also experimented with novel model variants, was responsible for our initial codebase, and efficient inference and visualizations. Lukasz and Aidan spent countless long days designing various parts of and implementing tensor2tensor, replacing our earlier codebase, greatly improving results and massively accelerating our research.\n\n†Work performed while at Google Brain.\n\n‡Work performed while at Google Research.\n\n31st Conference on Neural Information Processing Systems (NIPS 2017), Long Beach, CA, USA.",
+            "md": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.\n\n∗Equal contribution. Listing order is random. Jakob proposed replacing RNNs with self-attention and started the effort to evaluate this idea. Ashish, with Illia, designed and implemented the first Transformer models and has been crucially involved in every aspect of this work. Noam proposed scaled dot-product attention, multi-head attention and the parameter-free position representation and became the other person involved in nearly every detail. Niki designed, implemented, tuned and evaluated countless model variants in our original codebase and tensor2tensor. Llion also experimented with novel model variants, was responsible for our initial codebase, and efficient inference and visualizations. Lukasz and Aidan spent countless long days designing various parts of and implementing tensor2tensor, replacing our earlier codebase, greatly improving results and massively accelerating our research.\n\n†Work performed while at Google Brain.\n\n‡Work performed while at Google Research.\n\n31st Conference on Neural Information Processing Systems (NIPS 2017), Long Beach, CA, USA.",
+            "bBox": {
+              "x": 108,
+              "y": 245,
+              "w": 396.31,
+              "h": 494.97
+            }
+          }
+        ],
+        "status": "OK",
+        "links": [],
+        "width": 612,
+        "height": 792,
+        "triggeredAutoMode": false,
+        "structuredData": null,
+        "noStructuredContent": false,
+        "noTextContent": false
+      },
+      {
+        "page": 2,
+        "text": "1     Introduction\nRecurrent neural networks, long short-term memory [13] and gated recurrent [7] neural networks\nin particular, have been firmly established as state of the art approaches in sequence modeling and\ntransduction problems such as language modeling and machine translation [ 35 , 2 , 5]. Numerous\nefforts have since continued to push the boundaries of recurrent language models and encoder-decoder\narchitectures [38, 24, 15].\nRecurrent models typically factor computation along the symbol positions of the input and output\nsequences. Aligning the positions to steps in computation time, they generate a sequence of hidden\nstates ht, as a function of the previous hidden state ht−1 and the input for position t. This inherently\nsequential nature precludes parallelization within training examples, which becomes critical at longer\nsequence lengths, as memory constraints limit batching across examples. Recent work has achieved\nsignificant improvements in computational efficiency through factorization tricks [ 21 ] and conditional\ncomputation [ 32 ], while also improving model performance in case of the latter. The fundamental\nconstraint of sequential computation, however, remains.\nAttention mechanisms have become an integral part of compelling sequence modeling and transduc-\ntion models in various tasks, allowing modeling of dependencies without regard to their distance in\nthe input or output sequences [ 2, 19 ]. In all but a few cases [ 27 ], however, such attention mechanisms\nare used in conjunction with a recurrent network.\nIn this work we propose the Transformer, a model architecture eschewing recurrence and instead\nrelying entirely on an attention mechanism to draw global dependencies between input and output.\nThe Transformer allows for significantly more parallelization and can reach a new state of the art in\ntranslation quality after being trained for as little as twelve hours on eight P100 GPUs.\n\n2\n      Background\nThe goal of reducing sequential computation also forms the foundation of the Extended Neural GPU\n[16 ], ByteNet [ 18 ] and ConvS2S [ 9], all of which use convolutional neural networks as basic building\nblock, computing hidden representations in parallel for all input and output positions. In these models,\nthe number of operations required to relate signals from two arbitrary input or output positions grows\nin the distance between positions, linearly for ConvS2S and logarithmically for ByteNet. This makes\nit more difficult to learn dependencies between distant positions [12 ]. In the Transformer this is\nreduced to a constant number of operations, albeit at the cost of reduced effective resolution due\nto averaging attention-weighted positions, an effect we counteract with Multi-Head Attention as\ndescribed in section 3.2.\nSelf-attention, sometimes called intra-attention is an attention mechanism relating different positions\nof a single sequence in order to compute a representation of the sequence. Self-attention has been\nused successfully in a variety of tasks including reading comprehension, abstractive summarization,\ntextual entailment and learning task-independent sentence representations [4, 27, 28, 22].\nEnd-to-end memory networks are based on a recurrent attention mechanism instead of sequence-\naligned recurrence and have been shown to perform well on simple-language question answering and\nlanguage modeling tasks [34].\nTo the best of our knowledge, however, the Transformer is the first transduction model relying\nentirely on self-attention to compute representations of its input and output without using sequence-\naligned RNNs or convolution. In the following sections, we will describe the Transformer, motivate\nself-attention and discuss its advantages over models such as [17, 18] and [9].\n\n3\n      Model Architecture\nMost competitive neural sequence transduction models have an encoder-decoder structure [ 5, 2 , 35].\nHere, the encoder maps an input sequence of symbol representations (x1, ..., xn) to a sequence\nof continuous representations z = (z1, ..., zn). Given z, the decoder then generates an output\nsequence (y1, ..., ym) of symbols one element at a time. At each step the model is auto-regressive\n[10], consuming the previously generated symbols as additional input when generating the next.\n\n                                                                2",
+        "md": "# 1 Introduction\n\nRecurrent neural networks, long short-term memory [13] and gated recurrent [7] neural networks in particular, have been firmly established as state of the art approaches in sequence modeling and transduction problems such as language modeling and machine translation [35, 2, 5]. Numerous efforts have since continued to push the boundaries of recurrent language models and encoder-decoder architectures [38, 24, 15].\n\nRecurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states ht, as a function of the previous hidden state ht−1 and the input for position t. This inherently sequential nature precludes parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. Recent work has achieved significant improvements in computational efficiency through factorization tricks [21] and conditional computation [32], while also improving model performance in case of the latter. The fundamental constraint of sequential computation, however, remains.\n\nAttention mechanisms have become an integral part of compelling sequence modeling and transduction models in various tasks, allowing modeling of dependencies without regard to their distance in the input or output sequences [2, 19]. In all but a few cases [27], however, such attention mechanisms are used in conjunction with a recurrent network.\n\nIn this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.\n\n# 2 Background\n\nThe goal of reducing sequential computation also forms the foundation of the Extended Neural GPU [16], ByteNet [18] and ConvS2S [9], all of which use convolutional neural networks as basic building block, computing hidden representations in parallel for all input and output positions. In these models, the number of operations required to relate signals from two arbitrary input or output positions grows in the distance between positions, linearly for ConvS2S and logarithmically for ByteNet. This makes it more difficult to learn dependencies between distant positions [12]. In the Transformer this is reduced to a constant number of operations, albeit at the cost of reduced effective resolution due to averaging attention-weighted positions, an effect we counteract with Multi-Head Attention as described in section 3.2.\n\nSelf-attention, sometimes called intra-attention is an attention mechanism relating different positions of a single sequence in order to compute a representation of the sequence. Self-attention has been used successfully in a variety of tasks including reading comprehension, abstractive summarization, textual entailment and learning task-independent sentence representations [4, 27, 28, 22].\n\nEnd-to-end memory networks are based on a recurrent attention mechanism instead of sequence-aligned recurrence and have been shown to perform well on simple-language question answering and language modeling tasks [34].\n\nTo the best of our knowledge, however, the Transformer is the first transduction model relying entirely on self-attention to compute representations of its input and output without using sequence-aligned RNNs or convolution. In the following sections, we will describe the Transformer, motivate self-attention and discuss its advantages over models such as [17, 18] and [9].\n\n# 3 Model Architecture\n\nMost competitive neural sequence transduction models have an encoder-decoder structure [5, 2, 35]. Here, the encoder maps an input sequence of symbol representations (x1, ..., xn) to a sequence of continuous representations z = (z1, ..., zn). Given z, the decoder then generates an output sequence (y1, ..., ym) of symbols one element at a time. At each step the model is auto-regressive [10], consuming the previously generated symbols as additional input when generating the next.",
+        "images": [
+          {
+            "name": "page_2.jpg",
+            "height": 792,
+            "width": 612,
+            "x": 0,
+            "y": 0,
+            "original_width": 1236,
+            "original_height": 1600,
+            "type": "full_page_screenshot"
+          }
+        ],
+        "charts": [],
+        "items": [
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "1 Introduction",
+            "md": "# 1 Introduction",
+            "bBox": {
+              "x": 108,
+              "y": 71,
+              "w": 81.88,
+              "h": 11.96
+            }
+          },
+          {
+            "type": "text",
+            "value": "Recurrent neural networks, long short-term memory [13] and gated recurrent [7] neural networks in particular, have been firmly established as state of the art approaches in sequence modeling and transduction problems such as language modeling and machine translation [35, 2, 5]. Numerous efforts have since continued to push the boundaries of recurrent language models and encoder-decoder architectures [38, 24, 15].\n\nRecurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states ht, as a function of the previous hidden state ht−1 and the input for position t. This inherently sequential nature precludes parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. Recent work has achieved significant improvements in computational efficiency through factorization tricks [21] and conditional computation [32], while also improving model performance in case of the latter. The fundamental constraint of sequential computation, however, remains.\n\nAttention mechanisms have become an integral part of compelling sequence modeling and transduction models in various tasks, allowing modeling of dependencies without regard to their distance in the input or output sequences [2, 19]. In all but a few cases [27], however, such attention mechanisms are used in conjunction with a recurrent network.\n\nIn this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.",
+            "md": "Recurrent neural networks, long short-term memory [13] and gated recurrent [7] neural networks in particular, have been firmly established as state of the art approaches in sequence modeling and transduction problems such as language modeling and machine translation [35, 2, 5]. Numerous efforts have since continued to push the boundaries of recurrent language models and encoder-decoder architectures [38, 24, 15].\n\nRecurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states ht, as a function of the previous hidden state ht−1 and the input for position t. This inherently sequential nature precludes parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. Recent work has achieved significant improvements in computational efficiency through factorization tricks [21] and conditional computation [32], while also improving model performance in case of the latter. The fundamental constraint of sequential computation, however, remains.\n\nAttention mechanisms have become an integral part of compelling sequence modeling and transduction models in various tasks, allowing modeling of dependencies without regard to their distance in the input or output sequences [2, 19]. In all but a few cases [27], however, such attention mechanisms are used in conjunction with a recurrent network.\n\nIn this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.",
+            "bBox": {
+              "x": 107,
+              "y": 71,
+              "w": 398.74,
+              "h": 679.96
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "2 Background",
+            "md": "# 2 Background",
+            "bBox": {
+              "x": 108,
+              "y": 362,
+              "w": 199.98,
+              "h": 388.96
+            }
+          },
+          {
+            "type": "text",
+            "value": "The goal of reducing sequential computation also forms the foundation of the Extended Neural GPU [16], ByteNet [18] and ConvS2S [9], all of which use convolutional neural networks as basic building block, computing hidden representations in parallel for all input and output positions. In these models, the number of operations required to relate signals from two arbitrary input or output positions grows in the distance between positions, linearly for ConvS2S and logarithmically for ByteNet. This makes it more difficult to learn dependencies between distant positions [12]. In the Transformer this is reduced to a constant number of operations, albeit at the cost of reduced effective resolution due to averaging attention-weighted positions, an effect we counteract with Multi-Head Attention as described in section 3.2.\n\nSelf-attention, sometimes called intra-attention is an attention mechanism relating different positions of a single sequence in order to compute a representation of the sequence. Self-attention has been used successfully in a variety of tasks including reading comprehension, abstractive summarization, textual entailment and learning task-independent sentence representations [4, 27, 28, 22].\n\nEnd-to-end memory networks are based on a recurrent attention mechanism instead of sequence-aligned recurrence and have been shown to perform well on simple-language question answering and language modeling tasks [34].\n\nTo the best of our knowledge, however, the Transformer is the first transduction model relying entirely on self-attention to compute representations of its input and output without using sequence-aligned RNNs or convolution. In the following sections, we will describe the Transformer, motivate self-attention and discuss its advantages over models such as [17, 18] and [9].",
+            "md": "The goal of reducing sequential computation also forms the foundation of the Extended Neural GPU [16], ByteNet [18] and ConvS2S [9], all of which use convolutional neural networks as basic building block, computing hidden representations in parallel for all input and output positions. In these models, the number of operations required to relate signals from two arbitrary input or output positions grows in the distance between positions, linearly for ConvS2S and logarithmically for ByteNet. This makes it more difficult to learn dependencies between distant positions [12]. In the Transformer this is reduced to a constant number of operations, albeit at the cost of reduced effective resolution due to averaging attention-weighted positions, an effect we counteract with Multi-Head Attention as described in section 3.2.\n\nSelf-attention, sometimes called intra-attention is an attention mechanism relating different positions of a single sequence in order to compute a representation of the sequence. Self-attention has been used successfully in a variety of tasks including reading comprehension, abstractive summarization, textual entailment and learning task-independent sentence representations [4, 27, 28, 22].\n\nEnd-to-end memory networks are based on a recurrent attention mechanism instead of sequence-aligned recurrence and have been shown to perform well on simple-language question answering and language modeling tasks [34].\n\nTo the best of our knowledge, however, the Transformer is the first transduction model relying entirely on self-attention to compute representations of its input and output without using sequence-aligned RNNs or convolution. In the following sections, we will describe the Transformer, motivate self-attention and discuss its advantages over models such as [17, 18] and [9].",
+            "bBox": {
+              "x": 107,
+              "y": 71,
+              "w": 398.66,
+              "h": 679.96
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "3 Model Architecture",
+            "md": "# 3 Model Architecture",
+            "bBox": {
+              "x": 108,
+              "y": 641,
+              "w": 117.16,
+              "h": 11.96
+            }
+          },
+          {
+            "type": "text",
+            "value": "Most competitive neural sequence transduction models have an encoder-decoder structure [5, 2, 35]. Here, the encoder maps an input sequence of symbol representations (x1, ..., xn) to a sequence of continuous representations z = (z1, ..., zn). Given z, the decoder then generates an output sequence (y1, ..., ym) of symbols one element at a time. At each step the model is auto-regressive [10], consuming the previously generated symbols as additional input when generating the next.",
+            "md": "Most competitive neural sequence transduction models have an encoder-decoder structure [5, 2, 35]. Here, the encoder maps an input sequence of symbol representations (x1, ..., xn) to a sequence of continuous representations z = (z1, ..., zn). Given z, the decoder then generates an output sequence (y1, ..., ym) of symbols one element at a time. At each step the model is auto-regressive [10], consuming the previously generated symbols as additional input when generating the next.",
+            "bBox": {
+              "x": 108,
+              "y": 71,
+              "w": 395.93,
+              "h": 679.96
+            }
+          }
+        ],
+        "status": "OK",
+        "links": [],
+        "width": 612,
+        "height": 792,
+        "triggeredAutoMode": false,
+        "structuredData": null,
+        "noStructuredContent": false,
+        "noTextContent": false
+      },
+      {
+        "page": 3,
+        "text": "                                                                         Output\n                                                                      Probabilities\n                                                                         Softmax\n                                                                          Linear\n                                                                       Add & Norm\n                                                                           Feed\n                                                                         Forward\n                                                                       Add & Norm\n                                             Add & Norm                Multi-Head\n                                                 Feed                    Attention\n                                               Forward                                        Nx\n                               Nx                                      Add & Norm\n                                             Add & Norm                  Masked\n                                              Multi-Head               Multi-Head\n                                               Attention                 Attention\n                             Positional                                                 Positional\n                             Encoding                                                   Encoding\n                                             EmbeddingInput              Output\n                                                                       Embedding\n                                                Inputs                  Outputs\n                                                                     (shifted right)\n                                 Figure 1: The Transformer - model architecture.\n\nThe Transformer follows this overall architecture using stacked self-attention and point-wise, fully\nconnected layers for both the encoder and decoder, shown in the left and right halves of Figure 1,\nrespectively.\n\n3.1    Encoder and Decoder Stacks\nEncoder:        The encoder is composed of a stack of N = 6 identical layers. Each layer has two\nsub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-\nwise fully connected feed-forward network. We employ a residual connection [ 11 ] around each of\nthe two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is\nLayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer\nitself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding\nlayers, produce outputs of dimension dmodel = 512.\n\nDecoder:       The decoder is also composed of a stack of N = 6 identical layers. In addition to the two\nsub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head\nattention over the output of the encoder stack. Similar to the encoder, we employ residual connections\naround each of the sub-layers, followed by layer normalization. We also modify the self-attention\nsub-layer in the decoder stack to prevent positions from attending to subsequent positions. This\nmasking, combined with fact that the output embeddings are offset by one position, ensures that the\npredictions for position i can depend only on the known outputs at positions less than i.\n\n3.2    Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output,\nwhere the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n\n                                                                3",
+        "md": "# Output Probabilities\n\n# Softmax\n\n# Linear\n\n# Add & Norm\n\n# Feed Forward\n\n# Add & Norm\n\n# Add & Norm\n\n# Multi-Head Feed Forward\n\n# Attention\n\n# Nx\n\n# Nx\n\n# Add & Norm\n\n# Masked Multi-Head Attention\n\n# Positional Encoding\n\n# Embedding Input\n\n# Output Embedding\n\n# Inputs\n\n# Outputs (shifted right)\n\nFigure 1: The Transformer - model architecture.\n\nThe Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n\n# 3.1 Encoder and Decoder Stacks\n\n# Encoder:\n\nThe encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512.\n\n# Decoder:\n\nThe decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with the fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n\n# 3.2 Attention\n\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum.",
+        "images": [
+          {
+            "name": "img_p2_1.png",
+            "height": 2239,
+            "width": 1520,
+            "x": 196.559,
+            "y": 72.00200000000001,
+            "original_width": 1520,
+            "original_height": 2239,
+            "ocr": [
+              {
+                "x": 930,
+                "y": 0,
+                "w": 204,
+                "h": 76,
+                "confidence": "0.9680109534671366",
+                "text": "Output"
+              },
+              {
+                "x": 865,
+                "y": 75,
+                "w": 334,
+                "h": 64,
+                "confidence": "0.7139761078758757",
+                "text": "Probabilities"
+              },
+              {
+                "x": 930,
+                "y": 218,
+                "w": 202,
+                "h": 54,
+                "confidence": "0.9999439487386765",
+                "text": "Softmax"
+              },
+              {
+                "x": 956,
+                "y": 358,
+                "w": 150,
+                "h": 52,
+                "confidence": "0.9085299062147066",
+                "text": "Linear"
+              },
+              {
+                "x": 886,
+                "y": 514,
+                "w": 290,
+                "h": 54,
+                "confidence": "0.6760768239123691",
+                "text": "Add & Norm"
+              },
+              {
+                "x": 970,
+                "y": 606,
+                "w": 122,
+                "h": 56,
+                "confidence": "0.7896517311300871",
+                "text": "Feed"
+              },
+              {
+                "x": 932,
+                "y": 670,
+                "w": 196,
+                "h": 54,
+                "confidence": "0.780785328082077",
+                "text": "Forward"
+              },
+              {
+                "x": 886,
+                "y": 828,
+                "w": 288,
+                "h": 54,
+                "confidence": "0.508880804849362",
+                "text": "Add & Norm"
+              },
+              {
+                "x": 345,
+                "y": 884,
+                "w": 289,
+                "h": 54,
+                "confidence": "0.9935097090339842",
+                "text": "Add & Norm"
+              },
+              {
+                "x": 902,
+                "y": 922,
+                "w": 260,
+                "h": 54,
+                "confidence": "0.7281917453978992",
+                "text": "Multi-Head"
+              },
+              {
+                "x": 430,
+                "y": 974,
+                "w": 122,
+                "h": 56,
+                "confidence": "0.9276343831963275",
+                "text": "Feed"
+              },
+              {
+                "x": 924,
+                "y": 986,
+                "w": 214,
+                "h": 54,
+                "confidence": "0.8973177595977159",
+                "text": "Attention"
+              },
+              {
+                "x": 392,
+                "y": 1038,
+                "w": 194,
+                "h": 52,
+                "confidence": "0.6561468073484363",
+                "text": "Forward"
+              },
+              {
+                "x": 1381,
+                "y": 1039,
+                "w": 88,
+                "h": 60,
+                "confidence": "0.4964069935854575",
+                "text": "Nx"
+              },
+              {
+                "x": 886,
+                "y": 1194,
+                "w": 288,
+                "h": 54,
+                "confidence": "0.508880804849362",
+                "text": "Add & Norm"
+              },
+              {
+                "x": 43,
+                "y": 1227,
+                "w": 88,
+                "h": 60,
+                "confidence": "0.9996521376362925",
+                "text": "Nx"
+              },
+              {
+                "x": 344,
+                "y": 1254,
+                "w": 290,
+                "h": 54,
+                "confidence": "0.6335571129527485",
+                "text": "Add & Norm"
+              },
+              {
+                "x": 938,
+                "y": 1284,
+                "w": 190,
+                "h": 56,
+                "confidence": "0.9999598982206249",
+                "text": "Masked"
+              },
+              {
+                "x": 363,
+                "y": 1341,
+                "w": 256,
+                "h": 56,
+                "confidence": "0.8444696327377935",
+                "text": "Multi-Head"
+              },
+              {
+                "x": 902,
+                "y": 1347,
+                "w": 260,
+                "h": 56,
+                "confidence": "0.9519362477979864",
+                "text": "Multi-Head"
+              },
+              {
+                "x": 382,
+                "y": 1404,
+                "w": 217,
+                "h": 60,
+                "confidence": "0.9999816814219462",
+                "text": "Attention"
+              },
+              {
+                "x": 932,
+                "y": 1410,
+                "w": 214,
+                "h": 56,
+                "confidence": "0.9999663032236172",
+                "text": "Attention"
+              },
+              {
+                "x": 0,
+                "y": 1653,
+                "w": 263,
+                "h": 64,
+                "confidence": "0.9995071781070956",
+                "text": "Positional"
+              },
+              {
+                "x": 1259,
+                "y": 1661,
+                "w": 261,
+                "h": 68,
+                "confidence": "0.9993049199033311",
+                "text": "Positional"
+              },
+              {
+                "x": 0,
+                "y": 1715,
+                "w": 263,
+                "h": 91,
+                "confidence": "0.8486584701637423",
+                "text": "Encoding"
+              },
+              {
+                "x": 1254,
+                "y": 1724,
+                "w": 266,
+                "h": 92,
+                "confidence": "0.9662176750742246",
+                "text": "Encoding"
+              },
+              {
+                "x": 425,
+                "y": 1831,
+                "w": 132,
+                "h": 62,
+                "confidence": "0.9987996482300286",
+                "text": "Input"
+              },
+              {
+                "x": 944,
+                "y": 1826,
+                "w": 175,
+                "h": 68,
+                "confidence": "0.9993813995660062",
+                "text": "Output"
+              },
+              {
+                "x": 351,
+                "y": 1877,
+                "w": 280,
+                "h": 85,
+                "confidence": "0.9997716216979919",
+                "text": "Embedding"
+              },
+              {
+                "x": 892,
+                "y": 1881,
+                "w": 277,
+                "h": 77,
+                "confidence": "0.9740338811420453",
+                "text": "Embedding"
+              },
+              {
+                "x": 398,
+                "y": 2094,
+                "w": 182,
+                "h": 74,
+                "confidence": "0.9997853734033049",
+                "text": "Inputs"
+              },
+              {
+                "x": 913,
+                "y": 2088,
+                "w": 234,
+                "h": 84,
+                "confidence": "0.7151557563969435",
+                "text": "Outputs"
+              },
+              {
+                "x": 850,
+                "y": 2164,
+                "w": 358,
+                "h": 75,
+                "confidence": "0.7993361809465634",
+                "text": "(shifted right)"
+              }
+            ]
+          },
+          {
+            "name": "page_3.jpg",
+            "height": 792,
+            "width": 612,
+            "x": 0,
+            "y": 0,
+            "original_width": 1236,
+            "original_height": 1600,
+            "type": "full_page_screenshot"
+          }
+        ],
+        "charts": [],
+        "items": [
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Output Probabilities",
+            "md": "# Output Probabilities",
+            "bBox": {
+              "x": 321.12,
+              "y": 72,
+              "w": 48.1,
+              "h": 272.74
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Softmax",
+            "md": "# Softmax",
+            "bBox": {
+              "x": 330.48,
+              "y": 103.39,
+              "w": 29.09,
+              "h": 7.78
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Linear",
+            "md": "# Linear",
+            "bBox": {
+              "x": 334.22,
+              "y": 123.55,
+              "w": 21.6,
+              "h": 7.49
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Add & Norm",
+            "md": "# Add & Norm",
+            "bBox": {
+              "x": 246.1,
+              "y": 146.02,
+              "w": 119.81,
+              "h": 114.34
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Feed Forward",
+            "md": "# Feed Forward",
+            "bBox": {
+              "x": 253.01,
+              "y": 159.27,
+              "w": 105.98,
+              "h": 69.7
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Add & Norm",
+            "md": "# Add & Norm",
+            "bBox": {
+              "x": 246.1,
+              "y": 146.02,
+              "w": 119.81,
+              "h": 114.34
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Add & Norm",
+            "md": "# Add & Norm",
+            "bBox": {
+              "x": 246.1,
+              "y": 146.02,
+              "w": 119.81,
+              "h": 114.34
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Multi-Head Feed Forward",
+            "md": "# Multi-Head Feed Forward",
+            "bBox": {
+              "x": 248.83,
+              "y": 159.27,
+              "w": 115.06,
+              "h": 114.77
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Attention",
+            "md": "# Attention",
+            "bBox": {
+              "x": 130,
+              "y": 213.99,
+              "w": 231.58,
+              "h": 476.98
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Nx",
+            "md": "# Nx",
+            "bBox": {
+              "x": 202.75,
+              "y": 221.62,
+              "w": 205.34,
+              "h": 35.71
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Nx",
+            "md": "# Nx",
+            "bBox": {
+              "x": 202.75,
+              "y": 221.62,
+              "w": 205.34,
+              "h": 35.71
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Add & Norm",
+            "md": "# Add & Norm",
+            "bBox": {
+              "x": 246.1,
+              "y": 146.02,
+              "w": 119.81,
+              "h": 114.34
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Masked Multi-Head Attention",
+            "md": "# Masked Multi-Head Attention",
+            "bBox": {
+              "x": 130,
+              "y": 204.77,
+              "w": 233.89,
+              "h": 486.19
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Positional Encoding",
+            "md": "# Positional Encoding",
+            "bBox": {
+              "x": 196.56,
+              "y": 310.03,
+              "w": 218.88,
+              "h": 23.47
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Embedding Input",
+            "md": "# Embedding Input",
+            "bBox": {
+              "x": 247.1,
+              "y": 335.67,
+              "w": 117.79,
+              "h": 18.86
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Output Embedding",
+            "md": "# Output Embedding",
+            "bBox": {
+              "x": 247.1,
+              "y": 72,
+              "w": 117.79,
+              "h": 282.53
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Inputs",
+            "md": "# Inputs",
+            "bBox": {
+              "x": 253.87,
+              "y": 335.67,
+              "w": 26.21,
+              "h": 48.53
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Outputs (shifted right)",
+            "md": "# Outputs (shifted right)",
+            "bBox": {
+              "x": 318.96,
+              "y": 72,
+              "w": 51.55,
+              "h": 322.42
+            }
+          },
+          {
+            "type": "text",
+            "value": "Figure 1: The Transformer - model architecture.\n\nThe Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.",
+            "md": "Figure 1: The Transformer - model architecture.\n\nThe Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.",
+            "bBox": {
+              "x": 107,
+              "y": 213.99,
+              "w": 398.25,
+              "h": 476.98
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "3.1 Encoder and Decoder Stacks",
+            "md": "# 3.1 Encoder and Decoder Stacks",
+            "bBox": {
+              "x": 108,
+              "y": 482,
+              "w": 199.98,
+              "h": 268.96
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Encoder:",
+            "md": "# Encoder:",
+            "bBox": {
+              "x": 108,
+              "y": 502,
+              "w": 40.08,
+              "h": 9.96
+            }
+          },
+          {
+            "type": "text",
+            "value": "The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512.",
+            "md": "The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512.",
+            "bBox": {
+              "x": 108,
+              "y": 72,
+              "w": 397.66,
+              "h": 618.96
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "Decoder:",
+            "md": "# Decoder:",
+            "bBox": {
+              "x": 108,
+              "y": 591,
+              "w": 37.95,
+              "h": 9.96
+            }
+          },
+          {
+            "type": "text",
+            "value": "The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with the fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.",
+            "md": "The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with the fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.",
+            "bBox": {
+              "x": 108,
+              "y": 72,
+              "w": 396,
+              "h": 618.96
+            }
+          },
+          {
+            "type": "heading",
+            "lvl": 1,
+            "value": "3.2 Attention",
+            "md": "# 3.2 Attention",
+            "bBox": {
+              "x": 108,
+              "y": 213.99,
+              "w": 253.58,
+              "h": 536.98
+            }
+          },
+          {
+            "type": "text",
+            "value": "An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum.",
+            "md": "An attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum.",
+            "bBox": {
+              "x": 107,
+              "y": 72,
+              "w": 397.61,
+              "h": 648.96
+            }
+          }
+        ],
+        "status": "OK",
+        "links": [],
+        "width": 612,
+        "height": 792,
+        "triggeredAutoMode": false,
+        "structuredData": null,
+        "noStructuredContent": false,
+        "noTextContent": false
+      }
+    ],
+    "job_metadata": {
+      "credits_used": 23.0,
+      "job_credits_usage": 0,
+      "job_pages": 0,
+      "job_auto_mode_triggered_pages": 0,
+      "job_is_cache_hit": true,
+      "credits_max": 1000
+    },
+    "job_id": "5bd11616-6dcb-46f3-ac3b-9e32058997cf",
+    "file_path": "Attention is all you need.pdf"
+  }
+]

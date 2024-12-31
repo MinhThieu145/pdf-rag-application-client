@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "5ce7ffa0-6210-45da-bb54-f60ea7854f16", "label": "5ce7ffa0-6210-45da-bb54-f60ea7854f16", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "18ba5a67-b3bf-4796-a7d0-c229def8374e", "label": "18ba5a67-b3bf-4796-a7d0-c229def8374e", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "600fa301-9aa9-49ce-94f1-082f97352848", "label": "600fa301-9aa9-49ce-94f1-082f97352848", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "20df4a3d-ebe3-42d5-bf67-c09351f58135", "label": "20df4a3d-ebe3-42d5-bf67-c09351f58135", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "9df67adf-2065-4f28-bb00-bdee9247b091", "label": "9df67adf-2065-4f28-bb00-bdee9247b091", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "e680a733-ae0d-4e68-b9af-b3dea38a1a80", "label": "e680a733-ae0d-4e68-b9af-b3dea38a1a80", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "File_path", "label": "File_path", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "D:\\learning management app\\server\\temp_text_for_property\\page_1.txt", "label": "D:\\learning management app\\server\\temp_text_for_property\\page_1.txt", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Google", "label": "Google", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Reproduce tables and figures", "label": "Reproduce tables and figures", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Ashish vaswani", "label": "Ashish vaswani", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Google brain", "label": "Google brain", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Noam shazeer", "label": "Noam shazeer", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Niki parmar", "label": "Niki parmar", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Google research", "label": "Google research", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Jakob uszkoreit", "label": "Jakob uszkoreit", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Llion jones", "label": "Llion jones", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Aidan n. gomez", "label": "Aidan n. gomez", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "University of toronto", "label": "University of toronto", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "\u0141ukasz kaiser", "label": "\u0141ukasz kaiser", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Illia polosukhin", "label": "Illia polosukhin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Recurrent neural networks", "label": "Recurrent neural networks", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "State of the art approaches in sequence modeling", "label": "State of the art approaches in sequence modeling", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Recurrent models", "label": "Recurrent models", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Sequence of hidden states", "label": "Sequence of hidden states", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Attention mechanisms", "label": "Attention mechanisms", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Integral part of sequence modeling", "label": "Integral part of sequence modeling", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Transformer", "label": "Transformer", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Significantly more parallelization", "label": "Significantly more parallelization", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "First transduction model relying entirely on self-attention", "label": "First transduction model relying entirely on self-attention", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Attention mechanism", "label": "Attention mechanism", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Extended neural gpu", "label": "Extended neural gpu", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Convolutional neural networks as basic building block", "label": "Convolutional neural networks as basic building block", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Self-attention", "label": "Self-attention", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Attention mechanism relating different positions of a single sequence", "label": "Attention mechanism relating different positions of a single sequence", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "End-to-end memory networks", "label": "End-to-end memory networks", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Recurrent attention mechanism", "label": "Recurrent attention mechanism", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Encoder", "label": "Encoder", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Input sequence of symbol representations to a sequence of continuous representations", "label": "Input sequence of symbol representations to a sequence of continuous representations", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Stack of n = 6 identical layers", "label": "Stack of n = 6 identical layers", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Residual connection", "label": "Residual connection", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Two sub-layers", "label": "Two sub-layers", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "The transformer", "label": "The transformer", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Encoder and decoder", "label": "Encoder and decoder", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Point-wise fully connected layers", "label": "Point-wise fully connected layers", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Stacked self-attention", "label": "Stacked self-attention", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Decoder", "label": "Decoder", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Third sub-layer", "label": "Third sub-layer", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Residual connections", "label": "Residual connections", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Attention function", "label": "Attention function", "shape": "dot", "size": 10}, {"color": "#97c2fc", "id": "Mapping a query and a set of key-value pairs to an output", "label": "Mapping a query and a set of key-value pairs to an output", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "to", "from": "5ce7ffa0-6210-45da-bb54-f60ea7854f16", "label": "SOURCE", "to": "18ba5a67-b3bf-4796-a7d0-c229def8374e", "width": 1}, {"arrows": "to", "from": "600fa301-9aa9-49ce-94f1-082f97352848", "label": "SOURCE", "to": "20df4a3d-ebe3-42d5-bf67-c09351f58135", "width": 1}, {"arrows": "to", "from": "9df67adf-2065-4f28-bb00-bdee9247b091", "label": "SOURCE", "to": "e680a733-ae0d-4e68-b9af-b3dea38a1a80", "width": 1}, {"arrows": "to", "from": "File_path", "label": "Is", "to": "D:\\learning management app\\server\\temp_text_for_property\\page_1.txt", "width": 1}, {"arrows": "to", "from": "Google", "label": "Grants permission to", "to": "Reproduce tables and figures", "width": 1}, {"arrows": "to", "from": "Ashish vaswani", "label": "Is part of", "to": "Google brain", "width": 1}, {"arrows": "to", "from": "Noam shazeer", "label": "Is part of", "to": "Google brain", "width": 1}, {"arrows": "to", "from": "Niki parmar", "label": "Is part of", "to": "Google research", "width": 1}, {"arrows": "to", "from": "Jakob uszkoreit", "label": "Is part of", "to": "Google research", "width": 1}, {"arrows": "to", "from": "Llion jones", "label": "Is part of", "to": "Google research", "width": 1}, {"arrows": "to", "from": "Aidan n. gomez", "label": "Is part of", "to": "University of toronto", "width": 1}, {"arrows": "to", "from": "\u0141ukasz kaiser", "label": "Is part of", "to": "Google brain", "width": 1}, {"arrows": "to", "from": "Illia polosukhin", "label": "Performed work at", "to": "Google research", "width": 1}, {"arrows": "to", "from": "Recurrent neural networks", "label": "Have been established as", "to": "State of the art approaches in sequence modeling", "width": 1}, {"arrows": "to", "from": "Recurrent models", "label": "Generate", "to": "Sequence of hidden states", "width": 1}, {"arrows": "to", "from": "Attention mechanisms", "label": "Have become", "to": "Integral part of sequence modeling", "width": 1}, {"arrows": "to", "from": "Transformer", "label": "Allows for", "to": "Significantly more parallelization", "width": 1}, {"arrows": "to", "from": "Transformer", "label": "Is", "to": "First transduction model relying entirely on self-attention", "width": 1}, {"arrows": "to", "from": "Transformer", "label": "Relies entirely on", "to": "Attention mechanism", "width": 1}, {"arrows": "to", "from": "Extended neural gpu", "label": "Use", "to": "Convolutional neural networks as basic building block", "width": 1}, {"arrows": "to", "from": "Self-attention", "label": "Is", "to": "Attention mechanism relating different positions of a single sequence", "width": 1}, {"arrows": "to", "from": "End-to-end memory networks", "label": "Are based on", "to": "Recurrent attention mechanism", "width": 1}, {"arrows": "to", "from": "Encoder", "label": "Maps", "to": "Input sequence of symbol representations to a sequence of continuous representations", "width": 1}, {"arrows": "to", "from": "Encoder", "label": "Composed of", "to": "Stack of n = 6 identical layers", "width": 1}, {"arrows": "to", "from": "Encoder", "label": "Employs", "to": "Residual connection", "width": 1}, {"arrows": "to", "from": "Encoder", "label": "Has", "to": "Two sub-layers", "width": 1}, {"arrows": "to", "from": "The transformer", "label": "Has", "to": "Encoder and decoder", "width": 1}, {"arrows": "to", "from": "The transformer", "label": "Uses", "to": "Point-wise fully connected layers", "width": 1}, {"arrows": "to", "from": "The transformer", "label": "Uses", "to": "Stacked self-attention", "width": 1}, {"arrows": "to", "from": "Decoder", "label": "Inserts", "to": "Third sub-layer", "width": 1}, {"arrows": "to", "from": "Decoder", "label": "Composed of", "to": "Stack of n = 6 identical layers", "width": 1}, {"arrows": "to", "from": "Decoder", "label": "Employs", "to": "Residual connections", "width": 1}, {"arrows": "to", "from": "Attention function", "label": "Can be described as", "to": "Mapping a query and a set of key-value pairs to an output", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
