@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { type Route } from 'next';
 
 const navigationItems = [
-  { path: '/landing', label: 'Home', exact: true },
-  { path: '/landing/page_1', label: 'Layout Demo' },
-  { path: '/landing/page_2', label: 'Features Demo' },
-  { path: '/landing/page_3', label: 'PDF Upload' },
-  { path: '/landing/page_4', label: 'PDF Viewer' },
-  { path: '/landing/page_5', label: 'Knowledge Graph' },
-  { path: '/landing/page_6', label: 'PDF Chat' },
+  { path: '/landing' as Route, label: 'Home', exact: true },
+  { path: '/landing/page_1' as Route, label: 'Layout Demo' },
+  { path: '/landing/page_2' as Route, label: 'Features Demo' },
+  { path: '/landing/page_3' as Route, label: 'PDF Upload' },
+  { path: '/landing/page_4' as Route, label: 'PDF Viewer' },
+  { path: '/landing/page_5' as Route, label: 'Knowledge Graph' },
+  { path: '/landing/page_6' as Route, label: 'PDF Chat' },
 ];
 
 export default function Navigation() {
@@ -31,7 +32,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link 
-            href="/landing" 
+            href={'/landing' as Route}
             className="text-xl font-bold text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300"
           >
             LMS
