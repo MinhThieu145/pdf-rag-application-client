@@ -3,28 +3,25 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   FiFile,
-  FiLink,
   FiSearch,
-  FiMoreVertical,
-  FiPlus,
-  FiSettings,
   FiRefreshCw,
   FiSend,
   FiChevronLeft,
-  FiChevronRight,
   FiX,
 } from "react-icons/fi";
-import axios from "axios";
-import toast from 'react-hot-toast';
+import axios, { AxiosError } from "axios";
+import toast, { Toaster } from 'react-hot-toast';
+import { API_BASE_URL } from '@/config';
 
 // Configure axios base URL
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8080/api/',
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Accept': 'application/json',
   }
 });
 
+// Type definitions
 interface Source {
   id: number;
   name: string;
@@ -35,38 +32,24 @@ interface Source {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  context?: string;
 }
 
-// Get cached value with expiry check
-const getCachedValue = (key: string) => {
-  try {
-    const item = localStorage.getItem(key);
-    if (!item) return null;
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
-    const { value, timestamp } = JSON.parse(item);
-    // Check if value is less than 24 hours old
-    if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
-      return value;
-    }
-    localStorage.removeItem(key);
-    return null;
-  } catch {
-    return null;
-  }
-};
+interface ThreadResponse {
+  chat_history: ChatMessage[];
+}
 
-// Set cached value with timestamp
-const setCachedValue = (key: string, value: string) => {
-  try {
-    const item = {
-      value,
-      timestamp: Date.now()
-    };
-    localStorage.setItem(key, JSON.stringify(item));
-  } catch (error) {
-    console.error('Error caching value:', error);
-  }
-};
+interface PDFResponse {
+  pdfs: {
+    name: string;
+    [key: string]: unknown;
+  }[];
+}
 
 // Loading dots animation component
 const LoadingDots = () => {
@@ -92,18 +75,24 @@ export default function Page() {
   const [mounted, setMounted] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [userId] = useState<string>(() => {
-    // Generate a random user ID if not exists
-    const existingId = localStorage.getItem('userId');
-    if (existingId) return existingId;
-    const newId = `user_${Math.random().toString(36).substr(2, 8)}`;
-    localStorage.setItem('userId', newId);
-    return newId;
-  });
+  const [userId, setUserId] = useState<string>('');
+
+  // Handle localStorage on client side only
+  useEffect(() => {
+    const storedUserId = window.localStorage.getItem('userId');
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      const newUserId = `user_${Math.random().toString(36).substr(2, 8)}`;
+      window.localStorage.setItem('userId', newUserId);
+      setUserId(newUserId);
+    }
+  }, []);
 
   // Initialize chat on component mount
   useEffect(() => {
     const initializeChat = async () => {
+      const loadingToast = toast.loading('Initializing chat...');
       try {
         // Get cached assistant ID or create new one
         const assistantResponse = await api.post('pdf-chat/create-assistant');
@@ -112,31 +101,35 @@ export default function Page() {
 
         try {
           // Try to get existing thread and messages
-          const threadResponse = await api.get(`pdf-chat/get-thread/${userId}`);
+          const threadResponse = await api.get<ThreadResponse>(`pdf-chat/get-thread/${userId}`);
           if (threadResponse.data.chat_history) {
             // Load existing chat history
-            const formattedMessages = threadResponse.data.chat_history.map((msg: any) => ({
+            const formattedMessages = threadResponse.data.chat_history.map((msg: ChatMessage) => ({
               role: msg.role,
               content: msg.content
             }));
             setMessages(formattedMessages);
           }
-        } catch (threadError: any) {
-          // If thread doesn't exist (404) or other error, create new thread
+        } catch (error) {
+          // Type check for Axios error
+          const threadError = error as AxiosError;
           if (threadError.response?.status === 404) {
             await api.post('pdf-chat/create-thread', { user_id: userId });
           } else {
-            throw threadError; // Re-throw other errors
+            throw error; // Re-throw other errors
           }
         }
         setMounted(true);
+        toast.success('Chat initialized successfully', { id: loadingToast });
       } catch (error) {
         console.error('Error initializing chat:', error);
-        toast.error('Failed to initialize chat');
+        toast.error('Failed to initialize chat', { id: loadingToast });
       }
     };
 
-    initializeChat();
+    if (userId) {
+      initializeChat();
+    }
   }, [userId]);
 
   // Fetch sources on component mount
@@ -144,13 +137,13 @@ export default function Page() {
     const fetchSources = async () => {
       try {
         setLoading(true);
-        const processedResponse = await api.get('pdf/processed');
+        const processedResponse = await api.get<PDFResponse>('pdf/processed');
         
         // Convert processed PDFs to source format
-        const processedSources: Source[] = (processedResponse.data.pdfs || []).map((pdf: any, index: number) => ({
+        const processedSources: Source[] = (processedResponse.data.pdfs || []).map((pdf, index) => ({
           id: index,
           name: pdf.name,
-          type: 'pdf',
+          type: 'pdf' as const,
           processed: true
         }));
         
@@ -167,17 +160,21 @@ export default function Page() {
 
   // Handle sending messages
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
-    if (!mounted) {
-      toast.error('Chat is still initializing. Please wait...');
-      return;
-    }
-    if (!assistantId) {
-      toast.error('Assistant not initialized. Please refresh the page.');
+    if (!inputMessage.trim()) {
+      toast.error('Please enter a message');
       return;
     }
 
-    // Check if a PDF is selected
+    if (!mounted) {
+      toast.error('Chat is still initializing');
+      return;
+    }
+
+    if (!assistantId) {
+      toast.error('Chat system not ready');
+      return;
+    }
+
     if (!selectedSource?.name) {
       toast.error('Please select a PDF first');
       return;
@@ -195,6 +192,8 @@ export default function Page() {
     const controller = new AbortController();
     setAbortController(controller);
 
+    const loadingToast = toast.loading('Processing your message...');
+
     try {
       const response = await api.post('pdf-chat/chat', {
         user_id: userId,
@@ -205,13 +204,24 @@ export default function Page() {
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response.data.response
+        content: response.data.response,
+        context: response.data.context
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      if (!response.data.context_used) {
+        toast.error('No relevant content found in PDF', { id: loadingToast });
+      } else {
+        toast.success('Response based on PDF content', { id: loadingToast });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      if (axios.isCancel(error)) {
+        toast.error('Request cancelled', { id: loadingToast });
+      } else {
+        toast.error('Failed to get response', { id: loadingToast });
+      }
     } finally {
       setIsLoading(false);
       setAbortController(null);
@@ -257,6 +267,26 @@ export default function Page() {
 
   return (
     <div className="flex h-screen bg-white-100 dark:bg-black text-black dark:text-white">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            padding: '16px',
+            borderRadius: '8px',
+            color: 'white',
+          },
+          success: {
+            style: { background: '#10B981' },
+          },
+          error: {
+            style: { background: '#EF4444' },
+          },
+          loading: {
+            style: { background: '#3B82F6' },
+          },
+        }}
+      />
       {/* Sidebar */}
       <div
         className={`${
@@ -332,82 +362,86 @@ export default function Page() {
           </button>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
-          {messages.map((message, index) => (
-            <div
-              key={`message-${index}`}
-              className={`mb-4 ${
-                message.role === "user" ? "ml-auto" : "mr-auto"
-              } max-w-3xl`}
-            >
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message, index) => (
               <div
-                className={`p-4 rounded-xl shadow-sm ${
-                  message.role === "user"
-                    ? "bg-black text-white-100 dark:bg-white-100 dark:text-black"
-                    : "bg-white-100 dark:bg-gray-800 text-black dark:text-white-100 border border-gray-200 dark:border-gray-700"
+                key={index}
+                className={`flex flex-col ${
+                  message.role === 'assistant' ? 'items-start' : 'items-end'
                 }`}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold">
-                    {message.role === "user" ? "You" : "Assistant"}
-                  </span>
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === 'assistant'
+                      ? 'bg-blue-100 dark:bg-blue-900'
+                      : 'bg-green-100 dark:bg-green-900'
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  {message.context && (
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 border-t pt-2">
+                      <div className="font-semibold mb-1">Context Used:</div>
+                      <div className="whitespace-pre-wrap">{message.context}</div>
+                    </div>
+                  )}
                 </div>
-                <p className="whitespace-pre-wrap">{message.content}</p>
               </div>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="mr-auto max-w-3xl">
-              <div className="bg-white-100 dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold">Assistant</span>
-                </div>
-                <LoadingDots />
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} /> {/* Scroll anchor */}
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="bg-white-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
-          <div className="flex gap-2 mb-4 overflow-x-auto">
-            {suggestionQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => setInputMessage(question)}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shadow-sm"
-              >
-                {question}
-              </button>
             ))}
+            {isLoading && (
+              <div className="mr-auto max-w-3xl">
+                <div className="bg-white-100 dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-semibold">Assistant</span>
+                  </div>
+                  <LoadingDots />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="Ask a question about your sources..."
-              className="flex-1 p-3 bg-white-100 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              disabled={isLoading}
-            />
-            <button
-              onClick={isLoading ? handleStopResponse : handleSendMessage}
-              className={`px-6 rounded-xl transition-colors flex items-center justify-center shadow-sm ${
-                isLoading 
-                  ? 'bg-red-600 hover:bg-red-700 text-white-100'
-                  : 'bg-black dark:bg-white-100 text-white-100 dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
-              }`}
-              disabled={!inputMessage.trim() && !isLoading}
-            >
-              {isLoading ? (
-                <FiX size={20} />
-              ) : (
-                <FiSend size={20} />
-              )}
-            </button>
+
+          {/* Bottom Bar */}
+          <div className="bg-white-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
+            <div className="flex gap-2 mb-4 overflow-x-auto">
+              {suggestionQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => setInputMessage(question)}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors whitespace-nowrap shadow-sm"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Ask a question about your sources..."
+                className="flex-1 p-3 bg-white-100 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 shadow-sm"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                disabled={isLoading}
+              />
+              <button
+                onClick={isLoading ? handleStopResponse : handleSendMessage}
+                className={`px-6 rounded-xl transition-colors flex items-center justify-center shadow-sm ${
+                  isLoading 
+                    ? 'bg-red-600 hover:bg-red-700 text-white-100'
+                    : 'bg-black dark:bg-white-100 text-white-100 dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                }`}
+                disabled={!inputMessage.trim() && !isLoading}
+              >
+                {isLoading ? (
+                  <FiX size={20} />
+                ) : (
+                  <FiSend size={20} />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

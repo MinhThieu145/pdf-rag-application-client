@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
-import { BellIcon, BookOpen } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 
 
 const NonDashboardNavBar = () => {

@@ -1,30 +1,29 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  FiUpload,
-  FiChevronLeft,
-  FiChevronRight,
-  FiSearch,
-  FiX,
-  FiList,
-  FiFileText,
-} from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiUpload, FiChevronLeft, FiChevronRight, FiSearch, FiX, FiList, FiFileText } from 'react-icons/fi';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
+import { API_BASE_URL } from '@/config';
+import Image from 'next/image';
+import 'katex/dist/katex.min.css';
 
 // Configure axios
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8080/api/pdf/',
+  baseURL: `${API_BASE_URL}/api/pdf`,  
   headers: {
     'Accept': 'application/json',
   }
 });
 
 const processApi = axios.create({
-  baseURL: 'http://127.0.0.1:8080/api/process/',
+  baseURL: `${API_BASE_URL}/api/process`,  
   headers: {
     'Accept': 'application/json',
   }
@@ -108,40 +107,33 @@ export default function PDFViewerLayout() {
     fetchFileData();
   }, [selectedFile]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles?.length) {
-      const file = acceptedFiles[0];
+  const handleFileUpload = async (files: File[]) => {
+    try {
       const formData = new FormData();
-      formData.append('file', file);
+      files.forEach((file) => {
+        formData.append('file', file);
+      });
 
-      try {
-        const response = await api.post('/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / (progressEvent.total ?? 100)
-            );
-            // You can use this to show upload progress if needed
-          },
-        });
-        
-        toast.success('File uploaded successfully');
-        // Refresh the file list
-        const listResponse = await api.get('/list');
-        if (listResponse.data && Array.isArray(listResponse.data.files)) {
-          setFiles(listResponse.data.files);
-        }
-      } catch (error) {
-        console.error('Failed to upload file:', error);
-        toast.error('Failed to upload file');
+      await api.post('/upload', formData, {
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+          }
+        },
+      });
+
+      toast.success('File uploaded successfully');
+      const listResponse = await api.get('/list');
+      if (listResponse.data && Array.isArray(listResponse.data.files)) {
+        setFiles(listResponse.data.files);
       }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('Failed to upload file');
     }
-  }, []);
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: handleFileUpload,
     accept: { 'application/pdf': ['.pdf'] },
   });
 
@@ -234,10 +226,12 @@ export default function PDFViewerLayout() {
                 ) : selectedFile && currentScreenshot ? (
                   <div className="w-full h-full flex flex-col">
                     <div className="flex-1 relative overflow-hidden">
-                      <img
+                      <Image
                         src={currentScreenshot.url}
                         alt={`Page ${currentPage}`}
-                        className="absolute inset-0 w-full h-full object-contain"
+                        fill
+                        style={{ objectFit: 'contain' }}
+                        priority
                       />
                     </div>
                     <div className="mt-4 flex items-center justify-center space-x-4 p-4">
@@ -300,7 +294,39 @@ export default function PDFViewerLayout() {
                           <p className="mt-2 text-sm text-gray-500">Loading content...</p>
                         </div>
                       ) : pageContents.length > 0 ? (
-                        <ReactMarkdown>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex, rehypeRaw]}
+                          components={{
+                            h1: ({...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                            h2: ({...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
+                            h3: ({...props}) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                            p: ({...props}) => <p className="mb-4" {...props} />,
+                            ul: ({...props}) => <ul className="list-disc ml-4 mb-4" {...props} />,
+                            ol: ({...props}) => <ol className="list-decimal ml-4 mb-4" {...props} />,
+                            li: ({...props}) => <li className="mb-1" {...props} />,
+                            table: ({...props}) => (
+                              <div className="overflow-x-auto my-8">
+                                <table className="min-w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm" {...props} />
+                              </div>
+                            ),
+                            thead: ({...props}) => (
+                              <thead className="bg-gray-50 dark:bg-gray-700" {...props} />
+                            ),
+                            tbody: ({...props}) => (
+                              <tbody className="divide-y divide-gray-200 dark:divide-gray-700" {...props} />
+                            ),
+                            tr: ({...props}) => (
+                              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" {...props} />
+                            ),
+                            th: ({...props}) => (
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" {...props} />
+                            ),
+                            td: ({...props}) => (
+                              <td className="px-6 py-4 whitespace-normal text-sm" {...props} />
+                            )
+                          }}
+                        >
                           {pageContents.find(p => p.page === currentPage)?.md || 'No content for this page'}
                         </ReactMarkdown>
                       ) : (
