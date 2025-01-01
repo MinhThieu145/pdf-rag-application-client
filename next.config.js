@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
 
 // API URLs
 const PROD_URL = 'https://pdf-rag-application-server.onrender.com'.replace(/\/$/, '');
@@ -7,7 +8,8 @@ const DEV_URL = 'http://127.0.0.1:8080'.replace(/\/$/, '');
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    esmExternals: 'loose'
+    esmExternals: 'loose',
+    typedRoutes: true
   },
   env: {
     NEXT_PUBLIC_USE_PRODUCTION_API: process.env.NODE_ENV === 'production' ? 'true' : 'false',
@@ -31,6 +33,13 @@ const nextConfig = {
       net: false,
       tls: false,
     };
+    
+    // Add alias configuration
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.join(__dirname),
+    };
+    
     return config;
   },
   headers: async () => {
