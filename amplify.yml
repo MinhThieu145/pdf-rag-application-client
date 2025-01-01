@@ -16,4 +16,3 @@ applications:
         paths:
           - node_modules/**/*
           - .next/cache/**/*
-    appRoot: client
