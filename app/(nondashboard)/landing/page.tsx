@@ -2,35 +2,36 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { type Route } from 'next';
 
 const features = [
   { 
-    href: '/landing/page_1', 
+    href: '/landing/page_1' as Route, 
     title: 'Layout Demo', 
     description: 'Explore our modern layout system' 
   },
   { 
-    href: '/landing/page_2', 
+    href: '/landing/page_2' as Route, 
     title: 'Features Demo', 
     description: 'Discover platform features' 
   },
   { 
-    href: '/landing/page_3', 
+    href: '/landing/page_3' as Route, 
     title: 'PDF Upload', 
     description: 'Upload and manage your documents' 
   },
   { 
-    href: '/landing/page_4', 
+    href: '/landing/page_4' as Route, 
     title: 'PDF Viewer', 
     description: 'View and interact with PDFs' 
   },
   { 
-    href: '/landing/page_5', 
+    href: '/landing/page_5' as Route, 
     title: 'Knowledge Graph', 
     description: 'Visualize document connections' 
   },
   { 
-    href: '/landing/page_6', 
+    href: '/landing/page_6' as Route, 
     title: 'PDF Chat', 
     description: 'Chat with your documents' 
   }
