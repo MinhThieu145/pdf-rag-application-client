@@ -38,7 +38,7 @@ const nextConfig = {
     
     return config;
   },
-  headers: async () => {
+  headers() {
     return [
       {
         source: '/:path*',
@@ -47,9 +47,27 @@ const nextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=3600',
           },
+          {
+            key: 'Large-Allocation',
+            value: 'true'
+          },
         ],
       },
     ];
+  },
+  experimental: {
+    largePageDataBytes: 128 * 1000, // 128KB
+    serverComponentsExternalPackages: ['pdf-parse'],
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/api/:path*',
+          destination: `${process.env.NODE_ENV === 'production' ? PROD_URL : DEV_URL}/api/:path*`,
+        },
+      ],
+    };
   },
 };
 
