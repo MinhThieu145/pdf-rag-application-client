@@ -19,9 +19,9 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className={`${inter.className} min-h-screen bg-gray-50 dark:bg-gray-900`}>
         <Navigation />
-        <div className="min-h-screen">
+        <main className="mt-16 p-4">
           {children}
-        </div>
+        </main>
       </body>
     </html>
   );

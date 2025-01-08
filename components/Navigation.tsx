@@ -6,13 +6,15 @@ import { useState } from 'react';
 import { type Route } from 'next';
 
 const navigationItems = [
-  { path: '/landing' as Route, label: 'Home', exact: true },
-  { path: '/landing/page_1' as Route, label: 'Layout Demo' },
-  { path: '/landing/page_2' as Route, label: 'Features Demo' },
-  { path: '/landing/page_3' as Route, label: 'PDF Upload' },
-  { path: '/landing/page_4' as Route, label: 'PDF Viewer' },
-  { path: '/landing/page_5' as Route, label: 'Knowledge Graph' },
-  { path: '/landing/page_6' as Route, label: 'PDF Chat' },
+  { path: '/' as Route, label: 'Home', exact: true },
+  { path: '/layout-demo' as Route, label: 'Layout Demo' },
+  { path: '/features-demo' as Route, label: 'Features Demo' },
+  { path: '/pdf-upload' as Route, label: 'PDF Upload' },
+  { path: '/pdf-viewer' as Route, label: 'PDF Viewer' },
+  { path: '/knowledge-graph' as Route, label: 'Knowledge Graph' },
+  { path: '/pdf-chat' as Route, label: 'PDF Chat' },
+  { path: '/document-editor' as Route, label: 'Document Editor' },
+  { path: '/evidence-extraction' as Route, label: 'Evidence Extraction' }
 ];
 
 export default function Navigation() {
@@ -20,19 +22,16 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string, exact = false) => {
-    if (exact) {
-      return pathname === path;
-    }
-    return pathname.startsWith(path);
+    return exact ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
   };
 
   return (
-    <nav className="fixed top-0 right-0 left-0 z-50 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <nav className="fixed top-0 right-0 left-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-md backdrop-blur-none">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link 
-            href={'/landing' as Route}
+            href={'/' as Route}
             className="text-xl font-bold text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300"
           >
             LMS
@@ -40,14 +39,14 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex lg:items-center lg:space-x-1">
-            {navigationItems.map((item) => (
+            {navigationItems.slice(1).map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
-                  isActive(item.path, item.exact)
-                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800'
+                  isActive(item.path)
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                 }`}
               >
                 {item.label}
@@ -76,17 +75,17 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="lg:hidden">
+          <div className="lg:hidden absolute left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {navigationItems.map((item) => (
+              {navigationItems.slice(1).map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    isActive(item.path, item.exact)
-                      ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800'
+                    isActive(item.path)
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                   }`}
                 >
                   {item.label}

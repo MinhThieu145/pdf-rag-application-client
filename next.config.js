@@ -7,10 +7,6 @@ const DEV_URL = 'http://127.0.0.1:8080'.replace(/\/$/, '');
 
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    esmExternals: 'loose',
-    typedRoutes: true
-  },
   env: {
     NEXT_PUBLIC_USE_PRODUCTION_API: process.env.NODE_ENV === 'production' ? 'true' : 'false',
     NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production' ? PROD_URL : DEV_URL,
@@ -49,7 +45,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=3600',
           },
         ],
       },
