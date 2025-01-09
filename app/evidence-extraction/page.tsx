@@ -3,17 +3,36 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FiUpload, FiX, FiSearch, FiFile, FiTrash2 } from "react-icons/fi";
 import { CgSpinner } from "react-icons/cg";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { v4 as uuidv4 } from 'uuid';
+import axios from "axios";
+import { API_BASE_URL } from '@/config';
 
+// Configure axios instance
+const api = axios.create({
+  baseURL: `${API_BASE_URL}/api/evidence`,
+  headers: {
+    'Accept': 'application/json',
+  }
+});
+
+/**
+ * Interface for tracking file upload progress and associated analysis results
+ */
 interface FileWithProgress {
   id: string;
   file: File;
   progress: number;
   size: string;
   url?: string;
+  analysis?: PaperAnalysis;
+  parseResult?: JsonData;
+  status?: string;
 }
 
+/**
+ * Interface for evidence items that can be grouped
+ */
 interface GroupItem {
   id: string;
   title: string;
@@ -21,12 +40,18 @@ interface GroupItem {
   evidence?: string[];
 }
 
+/**
+ * Interface for organizing evidence items into groups
+ */
 interface Group {
   id: string;
   title: string;
   items: GroupItem[];
 }
 
+/**
+ * Interface for image information extracted from documents
+ */
 interface ImageInfo {
   name: string;
   height: number;
@@ -38,6 +63,9 @@ interface ImageInfo {
   type: string;
 }
 
+/**
+ * Interface for bounding box coordinates
+ */
 interface BBox {
   x: number;
   y: number;
@@ -45,6 +73,9 @@ interface BBox {
   h: number;
 }
 
+/**
+ * Interface for text items extracted from documents
+ */
 interface TextItem {
   type: string;
   value: string;
@@ -52,6 +83,9 @@ interface TextItem {
   bBox: BBox;
 }
 
+/**
+ * Interface for page-level information from document analysis
+ */
 interface Page {
   page: number;
   text: string;
@@ -69,6 +103,9 @@ interface Page {
   noTextContent: boolean;
 }
 
+/**
+ * Interface for job processing metadata
+ */
 interface JobMetadata {
   credits_used: number;
   job_credits_usage: number;
@@ -78,6 +115,9 @@ interface JobMetadata {
   credits_max: number;
 }
 
+/**
+ * Interface for JSON data returned from document processing
+ */
 interface JsonData {
   pages: Page[];
   job_metadata: JobMetadata;
@@ -85,18 +125,27 @@ interface JsonData {
   file_path: string;
 }
 
+/**
+ * Interface for evidence processing request
+ */
 interface ProcessEvidenceRequest {
   file_name: string;
   json_data: JsonData;
   essay_topic: string;
 }
 
+/**
+ * Interface for extracted evidence items
+ */
 interface Evidence {
   raw_text: string;
   meaning: string;
   relevance_score: number;
 }
 
+/**
+ * Interface for paper analysis results
+ */
 interface PaperAnalysis {
   summary: string;
   methodology: string;
@@ -108,6 +157,9 @@ interface PaperAnalysis {
   }>;
 }
 
+/**
+ * Interface for evidence extraction API response
+ */
 interface ExtractionResponse {
   message: string;
   result: {
@@ -124,13 +176,20 @@ interface ExtractionResponse {
   };
 }
 
-const Page: React.FC = () => {
+/**
+ * Main page component for evidence extraction functionality
+ * Handles file uploads, document processing, and evidence display
+ */
+export default function Page() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const groupRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [mounted, setMounted] = useState(false);
   const [files, setFiles] = useState<FileWithProgress[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<ExtractionResponse | null>(null);
   const [selectedItem, setSelectedItem] = useState<GroupItem | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const groupRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [groups, setGroups] = useState<Group[]>([
     {
       id: "1",
@@ -169,7 +228,11 @@ const Page: React.FC = () => {
       ]
     }
   ]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle mounting to prevent hydration errors
+  useEffect(() => {
+    setMounted(true);
+    }, []);
 
   const placeholderEvidence = [
     "Strong supporting evidence found",
@@ -186,6 +249,31 @@ const Page: React.FC = () => {
     }
   }, [selectedGroup]);
 
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const { data } = await api.get('/list');
+        console.log("Fetched files:", data);
+
+        // Convert the fetched files to our file format
+        const existingFiles = data.files.map((file: any) => ({
+          id: uuidv4(),
+          file: { name: file.name } as File, // Only keep the name
+          progress: 100,
+        }));
+
+        setFiles(existingFiles);
+      } catch (error) {
+        console.error('Fetch files error:', error);
+        toast.error('Failed to fetch existing files');
+      }
+    };
+
+    if (mounted) {
+      fetchFiles();
+    }
+  }, [mounted]);
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
@@ -199,7 +287,14 @@ const Page: React.FC = () => {
     else return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
+  /**
+   * Handles file upload and processing
+   * @param acceptedFiles - Array of files to process
+   */
   const handleFiles = async (acceptedFiles: File[]) => {
+    if (!acceptedFiles.length) return;
+    console.log('=== Starting file upload ===');
+
     try {
       setLoading(true);
       const newFiles = acceptedFiles.map((file) => ({
@@ -210,111 +305,98 @@ const Page: React.FC = () => {
       }));
 
       setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+      toast.loading('Preparing files for upload...');
 
       for (const fileInfo of newFiles) {
         const formData = new FormData();
         formData.append("file", fileInfo.file);
 
         try {
-          // Upload file
-          const uploadResponse = await fetch("/api/evidence/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`);
-          }
-
-          const uploadData = await uploadResponse.json();
-          console.log("Upload successful:", uploadData);
-
-          if (!uploadData || !uploadData.evidence) {
-            throw new Error("Invalid response from server: missing evidence data");
-          }
-
-          // Extract evidence
-          const extractionResponse = await fetch("/api/evidence/process-evidence", {
-            method: "POST",
+          // Step 1: Upload file
+          toast.loading(`Uploading ${fileInfo.file.name}...`, { id: fileInfo.id });
+          const uploadResponse = await api.post('/upload', formData, {
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'multipart/form-data',
             },
-            body: JSON.stringify({
-              file_name: fileInfo.file.name,
-              json_data: uploadData.evidence,
-            }),
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setFiles((prevFiles) =>
+                  prevFiles.map((f) =>
+                    f.id === fileInfo.id ? { ...f, progress } : f
+                  )
+                );
+              }
+            },
           });
 
-          if (!extractionResponse.ok) {
-            const errorText = await extractionResponse.text();
-            throw new Error(`Evidence extraction failed: ${extractionResponse.status} ${extractionResponse.statusText} - ${errorText}`);
-          }
+          toast.success(`${fileInfo.file.name} uploaded successfully`, { id: fileInfo.id });
 
-          const extractionData = (await extractionResponse.json()) as ExtractionResponse;
-          console.log('Raw extraction data:', JSON.stringify(extractionData, null, 2));
-          
-          // Safely access nested properties with null checks
-          const analysis = extractionData?.result?.analysis;
-          const extractions = extractionData?.result?.extractions;
-          const model = extractionData?.metadata?.model;
-          const usage = extractionData?.metadata?.usage;
-          
-          if (!analysis || !extractions) {
-            throw new Error("Invalid extraction response: missing analysis or extractions");
-          }
-
-          console.log('Analysis:', analysis);
-          console.log('Extractions:', extractions);
-          console.log('Model:', model || 'N/A');
-          console.log('Usage:', usage || 'N/A');
-
-          // Create new groups from the extraction data
-          const newGroups = [
-            {
-              id: uuidv4(),
-              title: "Evidence",
-              items: extractions.map(evidence => ({
-                id: uuidv4(),
-                title: "Evidence",
-                description: evidence.meaning,
-                evidence: [evidence.raw_text]
-              }))
-            },
-            {
-              id: uuidv4(),
-              title: "Themes",
-              items: analysis.themes?.map(theme => ({
-                id: uuidv4(),
-                title: theme.theme,
-                description: theme.relevance
-              })) || []
-            }
-          ];
-
-          setGroups(prevGroups => [...prevGroups, ...newGroups]);
-          toast.success(`Successfully processed ${fileInfo.file.name}`);
-
-        } catch (error) {
-          console.error("Error processing file:", error);
-          toast.error(`Error processing ${fileInfo.file.name}: ${error.message}`);
-          
-          // Update file status to show error
+          // Update file with URL and set to processing state
           setFiles((prevFiles) =>
             prevFiles.map((f) =>
               f.id === fileInfo.id
                 ? {
                     ...f,
-                    progress: -1, // Use negative progress to indicate error
+                    progress: 100,
+                    url: uploadResponse.data.file.url,
                   }
                 : f
+            )
+          );
+
+          // Step 2: Extract evidence data
+          toast.loading(`Parsing ${fileInfo.file.name}...`, { id: `parse-${fileInfo.id}` });
+          const evidenceResponse = await api.get(`/parse/${fileInfo.file.name}`);
+          console.log('Parse response:', evidenceResponse.data);
+          toast.success(`${fileInfo.file.name} parsed successfully`, { id: `parse-${fileInfo.id}` });
+
+          // Update file status to show parsing is complete
+          setFiles((prevFiles) =>
+            prevFiles.map((f) =>
+              f.id === fileInfo.id
+                ? {
+                    ...f,
+                    status: 'Parsed successfully',
+                  }
+                : f
+            )
+          );
+
+          // Step 3: Process with GPT
+          // const processResponse = await api.post<ExtractionResponse>('/raw-extract', {
+          //   file_name: fileInfo.file.name,
+          //   json_data: evidenceResponse.data,
+          //   essay_topic: "Analyze the key findings and methodology of this research paper"
+          // });
+
+          // Update file with final results
+          // setFiles((prevFiles) =>
+          //   prevFiles.map((f) =>
+          //     f.id === fileInfo.id
+          //       ? {
+          //           ...f,
+          //           progress: 100,
+          //           analysis: processResponse.data.result.analysis,
+          //           parseResult: evidenceResponse.data
+          //         }
+          //       : f
+          //   )
+          // );
+
+          toast.success(`${fileInfo.file.name} processed successfully`);
+        } catch (error) {
+          handleProcessingError(error);
+          toast.error(`Failed to process ${fileInfo.file.name}`, { id: fileInfo.id });
+          setFiles((prevFiles) =>
+            prevFiles.map((f) =>
+              f.id === fileInfo.id ? { ...f, progress: 0 } : f
             )
           );
         }
       }
     } catch (error) {
-      console.error("Error handling files:", error);
-      toast.error(`Error handling files: ${error.message}`);
+      handleProcessingError(error);
     } finally {
       setLoading(false);
     }
@@ -341,49 +423,17 @@ const Page: React.FC = () => {
 
     try {
       // Delete from evidence endpoint
-      const deleteUrl = `/api/evidence/delete/${encodeURIComponent(file.file.name)}`;
-      console.log('Sending delete request to:', deleteUrl);
-
-      const response = await fetch(deleteUrl, { 
-        method: 'DELETE',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('Delete response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Delete error response:', errorText);
-        throw new Error(`Failed to delete file: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const responseData = await response.json();
-      console.log('Delete success response:', responseData);
-
-      setFiles((prevFiles) => prevFiles.filter((f) => f.id !== fileId));
+      await api.delete(`/delete/${encodeURIComponent(file.file.name)}`);
       
-      // Also remove from groups
-      setGroups(prevGroups => {
-        const updatedGroups = prevGroups.map(group => ({
-          ...group,
-          items: group.items.filter(item => 
-            !item.evidence?.some(evidence => evidence.includes(file.file.name))
-          )
-        }));
-        console.log('Updated groups after delete:', updatedGroups);
-        return updatedGroups;
-      });
-
-      toast.success(responseData.message || 'File deleted successfully');
-    } catch (error) {
+      setFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
+      toast.success('File deleted successfully');
+    } catch (error: unknown) {
       console.error('Delete error:', error);
-      toast.error(`Failed to delete file: ${error.message}`);
+      if (error instanceof Error) {
+        toast.error(`Failed to delete file: ${error.message}`);
+      } else {
+        toast.error('Failed to delete file: An unknown error occurred');
+      }
     }
   };
 
@@ -395,38 +445,74 @@ const Page: React.FC = () => {
     toast.success("All files cleared");
   };
 
-  // Fetch existing files on component mount
-  useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pdf/list`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch files');
-        }
-        const data = await response.json();
-        
-        // Convert the fetched files to our file format
-        const existingFiles = data.files.map((file: any) => ({
-          id: Math.random().toString(36).substring(7),
-          file: new File([], file.name, { type: 'application/pdf' }), // Dummy File object
-          progress: 100,
-          size: formatBytes(file.size),
-          url: file.url
-        }));
+  /**
+   * Handles error during file processing
+   * @param error - Error object from API call
+   */
+  const handleProcessingError = (error: any) => {
+    console.error('=== Processing error ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+    }
+    toast.error("Failed to process file: " + (error.response?.data?.detail || error.message));
+  };
 
-        setFiles(existingFiles);
-      } catch (error) {
-        console.error('Fetch files error:', error);
-        toast.error('Failed to fetch existing files');
-      }
-    };
-
-    fetchFiles();
-  }, []);
+  // Return loading state during SSR
+  if (!mounted) {
+    return (
+      <div className="flex flex-col md:flex-row h-screen bg-white">
+        <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
+          <div className="p-4">Loading...</div>
+        </div>
+        <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
+          <div className="p-4">Loading...</div>
+        </div>
+        <div className="w-full md:w-1/3 overflow-hidden flex flex-col bg-gray-50">
+          <div className="p-4">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-white">
-      <Toaster position="top-right" />
+      {/* Toast container - moved outside the main layout */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          success: {
+            style: {
+              background: '#10B981',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#10B981',
+            },
+          },
+          error: {
+            style: {
+              background: '#EF4444',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#EF4444',
+            },
+          },
+          loading: {
+            style: {
+              background: '#3B82F6',
+              color: '#fff',
+            },
+          },
+          duration: 3000,
+        }}
+      />
+
       {/* File Upload Panel */}
       <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
         <div className="p-4 overflow-y-auto">
@@ -442,6 +528,7 @@ const Page: React.FC = () => {
               className="hidden"
               multiple
               onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
+              accept=".pdf,.doc,.docx"
             />
             <div className="text-center">
               <FiUpload className="mx-auto text-4xl mb-2 text-blue-600" />
@@ -462,7 +549,7 @@ const Page: React.FC = () => {
           <div className="space-y-3">
             {files.map((file) => (
               <div key={file.id} className="bg-white rounded-lg p-4 shadow-sm border">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-3">
                     <FiFile className="text-2xl text-blue-600" />
                     <div>
@@ -477,19 +564,24 @@ const Page: React.FC = () => {
                     <FiTrash2 />
                   </button>
                 </div>
-                <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600 transition-all duration-500"
-                    style={{ width: `${file.progress}%` }}
-                  />
-                </div>
+                {file.status && (
+                  <p className="text-sm text-gray-600 mb-2">{file.status}</p>
+                )}
+                {file.progress < 100 && (
+                  <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 transition-all duration-500"
+                      style={{ width: `${file.progress}%` }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Grouped Evidence Column */}
+      {/* Analysis Panel */}
       <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
         <div className="p-4 overflow-y-auto">
           <div className="mb-4">
@@ -505,46 +597,19 @@ const Page: React.FC = () => {
             </div>
           </div>
 
-          {loading && (
+          {loading ? (
             <div className="flex items-center justify-center py-4">
               <CgSpinner className="animate-spin text-2xl text-blue-600" />
             </div>
-          )}
-
-          {groups.map(group => (
-            <div 
-              key={group.id} 
-              className="mb-6"
-              ref={el => groupRefs.current[group.id] = el}
-            >
-              <h2 className="text-lg font-semibold mb-3 pb-2 border-b text-gray-800">{group.title}</h2>
-              <div className="space-y-3">
-                {group.items
-                  .filter(item => 
-                    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    item.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map(item => (
-                    <div
-                      key={item.id}
-                      className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                        selectedItem?.id === item.id
-                          ? "bg-blue-50 border-blue-200 shadow-md transform scale-[1.02]"
-                          : "bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200"
-                      }`}
-                      onClick={() => setSelectedItem(item)}
-                    >
-                      <h3 className="font-medium mb-1 text-gray-800">{item.title}</h3>
-                      <p className="text-sm text-gray-500">{item.description}</p>
-                    </div>
-                  ))}
-              </div>
+          ) : (
+            <div className="flex items-center justify-center h-[calc(100vh-200px)] text-center text-gray-500">
+              <p>Evidence extraction is temporarily disabled</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
-      {/* Evidence Details Section */}
+      {/* Details Panel */}
       <div className="w-full md:w-1/3 overflow-hidden flex flex-col bg-gray-50">
         <div className="p-4 overflow-y-auto">
           {selectedItem ? (
@@ -573,14 +638,12 @@ const Page: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center text-gray-500 mt-10">
-              <p>Select an evidence item to view details</p>
+            <div className="flex items-center justify-center h-[calc(100vh-200px)] text-center text-gray-500">
+              <p>Select an item to view details</p>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-};
-
-export default Page;
+}
