@@ -6,6 +6,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
 import { API_BASE_URL } from '@/config';
+import { useEvidenceStore } from '@/store/evidenceStore';
 
 // Configure axios instance
 const api = axios.create({
@@ -226,6 +227,7 @@ export default function Page() {
     }
   ]);
 
+  const { selectedExtractions, addExtraction, removeExtraction } = useEvidenceStore();
   const [extractions, setExtractions] = useState<ApiEvidence[]>([]);
   const [selectedExtraction, setSelectedExtraction] = useState<ApiEvidence | null>(null);
   const [groupedExtractions, setGroupedExtractions] = useState<{ [key: string]: ApiEvidence[] }>({});
@@ -530,41 +532,102 @@ export default function Page() {
     toast.error("Failed to process file: " + (error.response?.data?.detail || error.message));
   };
 
+  // Function to handle checkbox selection
+  const handleExtractionSelect = (extraction: ApiEvidence, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the parent click
+    const isSelected = selectedExtractions.some(item => item.raw_text === extraction.raw_text);
+    if (isSelected) {
+      removeExtraction(extraction);
+    } else {
+      addExtraction(extraction);
+    }
+  };
+
   // Function to render the evidence list in the middle column
   const renderEvidenceList = () => {
-    return Object.entries(groupedExtractions).map(([documentName, items]) => (
-      <div key={documentName} className="mb-6">
-        <div className="bg-gray-100 p-3 rounded-lg mb-2">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Document: {documentName}
-          </h3>
-        </div>
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                selectedExtraction?.raw_text === item.raw_text
-                  ? 'bg-blue-100 border-2 border-blue-500'
-                  : 'bg-white hover:bg-gray-50 border border-gray-200'
-              }`}
-              onClick={() => setSelectedExtraction(item)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">{item.raw_text}</p>
-                  <div className="mt-1 flex items-center space-x-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Score: {(item.relevance_score * 100).toFixed(0)}%
-                    </span>
+    return (
+      <div className="relative">
+        {/* Write Essay Button */}
+        {selectedExtractions.length > 0 && (
+          <div className="sticky top-0 z-10 bg-white py-2">
+            <div className="flex justify-end pr-2">
+              <button
+                onClick={() => {/* TODO: Implement essay writing */}}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md"
+              >
+                <span>Write Essay</span>
+                <span className="flex items-center justify-center w-4 h-4 bg-white text-blue-600 text-xs font-bold rounded-full">
+                  {selectedExtractions.length}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Evidence List */}
+        <div className="space-y-6">
+          {Object.entries(groupedExtractions).map(([documentName, items]) => (
+            <div key={documentName} className="mb-6">
+              <div className="bg-gray-100 p-3 rounded-lg mb-2">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Document: {documentName}
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {items.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`group p-4 rounded-lg transition-all duration-200 ${
+                      selectedExtraction?.raw_text === item.raw_text
+                        ? 'bg-blue-50 border-2 border-blue-500'
+                        : 'bg-white hover:bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Custom Checkbox */}
+                      <div 
+                        onClick={(e) => handleExtractionSelect(item, e)}
+                        className={`relative flex-shrink-0 w-5 h-5 rounded-full border-2 cursor-pointer transition-all duration-200 ${
+                          selectedExtractions.some(selected => selected.raw_text === item.raw_text)
+                            ? 'bg-blue-600 border-blue-600'
+                            : 'border-gray-300 group-hover:border-blue-400'
+                        }`}
+                      >
+                        {selectedExtractions.some(selected => selected.raw_text === item.raw_text) && (
+                          <svg 
+                            className="absolute inset-0 w-full h-full text-white p-1"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </div>
+                      {/* Content */}
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setSelectedExtraction(item)}
+                      >
+                        <p className="text-sm text-gray-900">{item.raw_text}</p>
+                        <div className="mt-1 flex items-center space-x-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Score: {(item.relevance_score * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       </div>
-    ));
+    );
   };
 
   // Function to render the detail panel in the right column
