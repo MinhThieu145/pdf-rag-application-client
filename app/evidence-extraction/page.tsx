@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from "react";
-import { FiUpload, FiX, FiSearch, FiFile, FiTrash2 } from "react-icons/fi";
-import { CgSpinner } from "react-icons/cg";
+import { FiUpload, FiX, FiSearch, FiFile, FiTrash2, FiLoader } from "react-icons/fi";
 import { Toaster, toast } from "react-hot-toast";
 import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
@@ -157,6 +156,13 @@ interface PaperAnalysis {
   }>;
 }
 
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center">
+    <FiLoader className="animate-spin text-2xl text-blue-600" />
+  </div>
+);
+
 /**
  * Main page component for evidence extraction functionality
  * Handles file uploads, document processing, and evidence display
@@ -171,6 +177,7 @@ export default function Page() {
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [selectedItem, setSelectedItem] = useState<GroupItem | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [groups, setGroups] = useState<Group[]>([
     {
       id: "1",
@@ -479,19 +486,17 @@ export default function Page() {
     return (
       <div className="flex flex-col md:flex-row h-screen bg-white">
         <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
-          <div className="p-4">Loading...</div>
+          <div className="p-4"><LoadingSpinner /></div>
         </div>
         <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
-          <div className="p-4">Loading...</div>
+          <div className="p-4"><LoadingSpinner /></div>
         </div>
         <div className="w-full md:w-1/3 overflow-hidden flex flex-col bg-gray-50">
-          <div className="p-4">Loading...</div>
+          <div className="p-4"><LoadingSpinner /></div>
         </div>
       </div>
     );
   }
-
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-white">
