@@ -158,25 +158,6 @@ interface PaperAnalysis {
 }
 
 /**
- * Interface for evidence extraction API response
- */
-interface ExtractionResponse {
-  message: string;
-  result: {
-    extractions: Evidence[];
-    analysis: PaperAnalysis;
-  };
-  metadata: {
-    model: string;
-    usage: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
-    };
-  };
-}
-
-/**
  * Main page component for evidence extraction functionality
  * Handles file uploads, document processing, and evidence display
  */
@@ -187,7 +168,7 @@ export default function Page() {
   const [files, setFiles] = useState<FileWithProgress[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<ExtractionResponse | null>(null);
+  const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [selectedItem, setSelectedItem] = useState<GroupItem | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>([
@@ -346,45 +327,78 @@ export default function Page() {
           );
 
           // Step 2: Extract evidence data
-          toast.loading(`Parsing ${fileInfo.file.name}...`, { id: `parse-${fileInfo.id}` });
-          const evidenceResponse = await api.get(`/parse/${fileInfo.file.name}`);
-          console.log('Parse response:', evidenceResponse.data);
-          toast.success(`${fileInfo.file.name} parsed successfully`, { id: `parse-${fileInfo.id}` });
+          try {
+            toast.loading(`Parsing ${fileInfo.file.name}...`, { id: `parse-${fileInfo.id}` });
+            const evidenceResponse = await api.get(`/parse/${fileInfo.file.name}`);
+            console.log('Parse response:', evidenceResponse.data);
+            toast.success(`${fileInfo.file.name} parsed successfully`, { id: `parse-${fileInfo.id}` });
 
-          // Update file status to show parsing is complete
-          setFiles((prevFiles) =>
-            prevFiles.map((f) =>
-              f.id === fileInfo.id
-                ? {
-                    ...f,
-                    status: 'Parsed successfully',
-                  }
-                : f
-            )
-          );
+            // Update file status to show parsing is complete
+            setFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.id === fileInfo.id
+                  ? {
+                      ...f,
+                      status: 'Parsed successfully',
+                    }
+                  : f
+              )
+            );
+          } catch (error) {
+            handleProcessingError(error);
+            toast.error(`Failed to process ${fileInfo.file.name}`, { id: fileInfo.id });
+            setFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.id === fileInfo.id ? { ...f, progress: 0 } : f
+              )
+            );
+            continue; // Exit if parsing failed
+          }
 
           // Step 3: Process with GPT
-          // const processResponse = await api.post<ExtractionResponse>('/raw-extract', {
-          //   file_name: fileInfo.file.name,
-          //   json_data: evidenceResponse.data,
-          //   essay_topic: "Analyze the key findings and methodology of this research paper"
-          // });
-
-          // Update file with final results
-          // setFiles((prevFiles) =>
-          //   prevFiles.map((f) =>
-          //     f.id === fileInfo.id
-          //       ? {
-          //           ...f,
-          //           progress: 100,
-          //           analysis: processResponse.data.result.analysis,
-          //           parseResult: evidenceResponse.data
-          //         }
-          //       : f
-          //   )
-          // );
-
-          toast.success(`${fileInfo.file.name} processed successfully`);
+          try {
+            toast.loading(`Analyzing ${fileInfo.file.name} with GPT...`, { id: `gpt-${fileInfo.id}` });
+            console.log('Starting GPT analysis for:', fileInfo.file.name);
+            
+            const processRequest = {
+              file_name: fileInfo.file.name,
+              essay_topic: "Analyze the key findings and methodology of this research paper"
+            };
+            console.log('GPT Analysis Request:', processRequest);
+            
+            const processResponse = await api.post('/raw-extract', processRequest);
+            console.log('GPT Analysis Response:', processResponse.data);
+            
+            // Update file with final results
+            setFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.id === fileInfo.id
+                  ? {
+                      ...f,
+                      progress: 100,
+                      status: 'Analysis complete',
+                      analysis: processResponse.data.result.analysis,
+                    }
+                  : f
+              )
+            );
+            
+            toast.success(`Analysis complete for ${fileInfo.file.name}`, { id: `gpt-${fileInfo.id}` });
+          } catch (error) {
+            console.error('GPT Analysis Error:', error);
+            toast.error(`Failed to analyze ${fileInfo.file.name}`, { id: `gpt-${fileInfo.id}` });
+            setFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.id === fileInfo.id
+                  ? {
+                      ...f,
+                      status: 'Analysis failed',
+                      progress: 0
+                    }
+                  : f
+              )
+            );
+          }
         } catch (error) {
           handleProcessingError(error);
           toast.error(`Failed to process ${fileInfo.file.name}`, { id: fileInfo.id });
