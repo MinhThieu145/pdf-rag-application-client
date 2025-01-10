@@ -491,6 +491,8 @@ export default function Page() {
     );
   }
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-white">
       {/* Toast container - moved outside the main layout */}
@@ -595,32 +597,89 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Analysis Panel */}
-      <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
-        <div className="p-4 overflow-y-auto">
-          <div className="mb-4">
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search evidence..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+      {/* Middle Column - Analysis Display */}
+      <div className="w-full md:w-1/3 bg-card rounded-lg p-4 shadow-sm overflow-y-auto max-h-[calc(100vh-2rem)]">
+        <div className="mb-4">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-accent" />
+            <input
+              type="text"
+              placeholder="Search analysis..."
+              className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {selectedFile?.analysis && (
+          <div className="space-y-6">
+            {/* Summary Section */}
+            <div className="bg-muted p-4 rounded-lg">
+              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Summary</h2>
+              <p className="text-sm text-muted-foreground">{selectedFile.analysis.analysis.summary}</p>
+            </div>
+
+            {/* Key Findings */}
+            <div>
+              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Key Findings</h2>
+              <div className="space-y-2">
+                {selectedFile.analysis.analysis.key_findings.map((finding, index) => (
+                  <div
+                    key={index}
+                    className="bg-muted p-3 rounded-lg text-sm"
+                  >
+                    {finding}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Themes */}
+            <div>
+              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Themes</h2>
+              <div className="space-y-2">
+                {selectedFile.analysis.analysis.themes.map((theme, index) => (
+                  <div
+                    key={index}
+                    className="bg-muted p-3 rounded-lg"
+                  >
+                    <p className="font-semibold text-sm">{theme.theme}</p>
+                    <p className="text-sm text-muted-foreground">{theme.relevance}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Extractions */}
+            <div>
+              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Evidence Extractions</h2>
+              <div className="space-y-2">
+                {selectedFile.analysis.extractions.map((extraction, index) => (
+                  <div
+                    key={index}
+                    className="bg-muted p-3 rounded-lg"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-medium">{extraction.raw_text}</p>
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                        {(extraction.relevance_score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{extraction.meaning}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        )}
 
-          {loading ? (
-            <div className="flex items-center justify-center py-4">
-              <CgSpinner className="animate-spin text-2xl text-blue-600" />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[calc(100vh-200px)] text-center text-gray-500">
-              <p>Evidence extraction is temporarily disabled</p>
-            </div>
-          )}
-        </div>
+        {!selectedFile?.analysis && (
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+            <FiFile className="w-12 h-12 mb-2" />
+            <p>Select a file to view analysis</p>
+          </div>
+        )}
       </div>
 
       {/* Details Panel */}
