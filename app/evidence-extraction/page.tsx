@@ -553,11 +553,11 @@ export default function Page() {
             <div className="flex justify-end pr-2">
               <button
                 onClick={() => {/* TODO: Implement essay writing */}}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white-50 text-xs font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md"
               >
                 <span>Write Essay</span>
-                <span className="flex items-center justify-center w-4 h-4 bg-white text-blue-600 text-xs font-bold rounded-full">
-                  {selectedExtractions.length}
+                <span className="flex items-center justify-center w-4 h-4 bg-white text-white-50 text-xs font-medium rounded-full">
+                  ({selectedExtractions.length})
                 </span>
               </button>
             </div>
