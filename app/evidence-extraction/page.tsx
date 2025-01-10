@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from "react";
-import { FiUpload, FiX, FiSearch, FiFile, FiTrash2, FiLoader } from "react-icons/fi";
+import { FiUpload, FiX, FiSearch, FiFile, FiTrash2, FiLoader, FiFileText } from "react-icons/fi";
 import { Toaster, toast } from "react-hot-toast";
 import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
@@ -156,6 +156,15 @@ interface PaperAnalysis {
   }>;
 }
 
+interface ApiEvidence {
+  document_name: string;
+  file_name: string;
+  essay_topic: string;
+  raw_text: string;
+  meaning: string;
+  relevance_score: number;
+}
+
 // Loading spinner component
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center">
@@ -171,9 +180,9 @@ export default function Page() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const groupRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<FileWithProgress[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [selectedItem, setSelectedItem] = useState<GroupItem | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -217,10 +226,50 @@ export default function Page() {
     }
   ]);
 
+  const [extractions, setExtractions] = useState<ApiEvidence[]>([]);
+  const [selectedExtraction, setSelectedExtraction] = useState<ApiEvidence | null>(null);
+  const [groupedExtractions, setGroupedExtractions] = useState<{ [key: string]: ApiEvidence[] }>({});
+
   // Handle mounting to prevent hydration errors
   useEffect(() => {
     setMounted(true);
-    }, []);
+  }, []);
+
+  useEffect(() => {
+    const fetchEvidence = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get<ApiEvidence[]>('/list-evidence');
+        if (response.data && Array.isArray(response.data)) {
+          // Group extractions by document_name
+          const grouped = response.data.reduce((acc, item) => {
+            if (!acc[item.document_name]) {
+              acc[item.document_name] = [];
+            }
+            acc[item.document_name].push(item);
+            return acc;
+          }, {} as { [key: string]: ApiEvidence[] });
+
+          // Sort extractions within each group by relevance_score
+          Object.keys(grouped).forEach(key => {
+            grouped[key].sort((a, b) => b.relevance_score - a.relevance_score);
+          });
+
+          setGroupedExtractions(grouped);
+          setExtractions(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching evidence:', error);
+        toast.error('Failed to fetch evidence');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (mounted) {
+      fetchEvidence();
+    }
+  }, [mounted]);
 
   const placeholderEvidence = [
     "Strong supporting evidence found",
@@ -481,119 +530,179 @@ export default function Page() {
     toast.error("Failed to process file: " + (error.response?.data?.detail || error.message));
   };
 
-  // Return loading state during SSR
-  if (!mounted) {
+  // Function to render the evidence list in the middle column
+  const renderEvidenceList = () => {
+    return Object.entries(groupedExtractions).map(([documentName, items]) => (
+      <div key={documentName} className="mb-6">
+        <div className="bg-gray-100 p-3 rounded-lg mb-2">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Document: {documentName}
+          </h3>
+        </div>
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                selectedExtraction?.raw_text === item.raw_text
+                  ? 'bg-blue-100 border-2 border-blue-500'
+                  : 'bg-white hover:bg-gray-50 border border-gray-200'
+              }`}
+              onClick={() => setSelectedExtraction(item)}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">{item.raw_text}</p>
+                  <div className="mt-1 flex items-center space-x-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Score: {(item.relevance_score * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ));
+  };
+
+  // Function to render the detail panel in the right column
+  const renderDetailPanel = () => {
+    if (!selectedExtraction) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500">
+          <p>Select an evidence item to view details</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex flex-col md:flex-row h-screen bg-white">
-        <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
-          <div className="p-4"><LoadingSpinner /></div>
+      <div className="p-6">
+        {/* Document Details Section */}
+        <div className="mb-8">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Document Details</h3>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="grid gap-3">
+              <div>
+                <span className="text-sm font-medium text-gray-600">Document</span>
+                <p className="text-gray-900 mt-1">{selectedExtraction.document_name}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-600">File</span>
+                <p className="text-gray-900 mt-1">{selectedExtraction.file_name}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-600">Essay Topic</span>
+                <p className="text-gray-900 mt-1">{selectedExtraction.essay_topic}</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
-          <div className="p-4"><LoadingSpinner /></div>
+
+        {/* Evidence Section */}
+        <div>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Evidence Details</h3>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-6">
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">Raw Text</h4>
+              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                {selectedExtraction.raw_text}
+              </p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">Interpretation</h4>
+              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                {selectedExtraction.meaning}
+              </p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2">Relevance Score</h4>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${selectedExtraction.relevance_score * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-gray-900 font-medium">
+                    {(selectedExtraction.relevance_score * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="w-full md:w-1/3 overflow-hidden flex flex-col bg-gray-50">
-          <div className="p-4"><LoadingSpinner /></div>
-        </div>
+      </div>
+    );
+  };
+
+  // Return loading state during SSR or while fetching data
+  if (!mounted || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white">
-      {/* Toast container - moved outside the main layout */}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          success: {
-            style: {
-              background: '#10B981',
-              color: '#fff',
-            },
-            iconTheme: {
-              primary: '#fff',
-              secondary: '#10B981',
-            },
-          },
-          error: {
-            style: {
-              background: '#EF4444',
-              color: '#fff',
-            },
-            iconTheme: {
-              primary: '#fff',
-              secondary: '#EF4444',
-            },
-          },
-          loading: {
-            style: {
-              background: '#3B82F6',
-              color: '#fff',
-            },
-          },
-          duration: 3000,
-        }}
-      />
-
-      {/* File Upload Panel */}
-      <div className="w-full md:w-1/3 border-r border-gray-200 overflow-hidden flex flex-col">
-        <div className="p-4 overflow-y-auto">
+    <div className="flex h-screen overflow-hidden">
+      {/* Left Column - File List */}
+      <div className="w-full md:w-1/5 border-r border-gray-200 overflow-y-auto">
+        <div className="p-4">
           <div
-            className="border-2 border-dashed rounded-lg p-8 mb-4 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-            onDrop={handleDrop}
+            className="border-2 border-dashed rounded-lg p-4 mb-4 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
             onDragOver={handleDragOver}
+            onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
           >
             <input
               type="file"
               ref={fileInputRef}
-              className="hidden"
-              multiple
               onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
-              accept=".pdf,.doc,.docx"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.txt"
+              multiple
             />
-            <div className="text-center">
-              <FiUpload className="mx-auto text-4xl mb-2 text-blue-600" />
-              <p className="text-gray-800 font-medium">Drop your documents here</p>
-              <p className="text-sm text-gray-500">or click to browse</p>
+            <div className="flex flex-col items-center justify-center text-center">
+              <FiUpload className="w-8 h-8 mb-2 text-blue-500" />
+              <p className="text-sm font-medium text-gray-600">Drop your document here</p>
+              <p className="text-xs text-gray-400 mt-1">or click to browse</p>
             </div>
           </div>
 
-          {files.length > 0 && (
-            <button
-              onClick={clearAll}
-              className="w-full mb-4 py-2 px-4 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              Clear All
-            </button>
-          )}
-
-          <div className="space-y-3">
+          <div className="space-y-2">
             {files.map((file) => (
-              <div key={file.id} className="bg-white rounded-lg p-4 shadow-sm border">
-                <div className="flex items-start justify-between mb-2">
+              <div key={file.id} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <FiFile className="text-2xl text-blue-600" />
+                    <FiFile className="text-xl text-blue-600" />
                     <div>
-                      <p className="font-medium text-gray-800 truncate">{file.file.name}</p>
-                      <p className="text-sm text-gray-500">{file.size}</p>
+                      <p className="text-sm font-medium text-gray-800 truncate max-w-[120px]">
+                        {file.file.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {formatBytes(file.file.size)}
+                      </p>
                     </div>
                   </div>
                   <button
                     onClick={() => removeFile(file.id)}
                     className="text-gray-400 hover:text-red-500 transition-colors"
                   >
-                    <FiTrash2 />
+                    <FiTrash2 className="w-4 h-4" />
                   </button>
                 </div>
-                {file.status && (
-                  <p className="text-sm text-gray-600 mb-2">{file.status}</p>
-                )}
                 {file.progress < 100 && (
-                  <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-600 transition-all duration-500"
-                      style={{ width: `${file.progress}%` }}
-                    />
+                  <div className="mt-2">
+                    <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 transition-all duration-300"
+                        style={{ width: `${file.progress}%` }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -602,125 +711,16 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Middle Column - Analysis Display */}
-      <div className="w-full md:w-1/3 bg-card rounded-lg p-4 shadow-sm overflow-y-auto max-h-[calc(100vh-2rem)]">
-        <div className="mb-4">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-accent" />
-            <input
-              type="text"
-              placeholder="Search analysis..."
-              className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+      {/* Middle Column - Evidence List */}
+      <div className="flex-1 overflow-y-auto p-4 border-l border-r border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          {renderEvidenceList()}
         </div>
-
-        {selectedFile?.analysis && (
-          <div className="space-y-6">
-            {/* Summary Section */}
-            <div className="bg-muted p-4 rounded-lg">
-              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Summary</h2>
-              <p className="text-sm text-muted-foreground">{selectedFile.analysis.analysis.summary}</p>
-            </div>
-
-            {/* Key Findings */}
-            <div>
-              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Key Findings</h2>
-              <div className="space-y-2">
-                {selectedFile.analysis.analysis.key_findings.map((finding, index) => (
-                  <div
-                    key={index}
-                    className="bg-muted p-3 rounded-lg text-sm"
-                  >
-                    {finding}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Themes */}
-            <div>
-              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Themes</h2>
-              <div className="space-y-2">
-                {selectedFile.analysis.analysis.themes.map((theme, index) => (
-                  <div
-                    key={index}
-                    className="bg-muted p-3 rounded-lg"
-                  >
-                    <p className="font-semibold text-sm">{theme.theme}</p>
-                    <p className="text-sm text-muted-foreground">{theme.relevance}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Extractions */}
-            <div>
-              <h2 className="text-heading font-heading mb-2 text-lg font-semibold">Evidence Extractions</h2>
-              <div className="space-y-2">
-                {selectedFile.analysis.extractions.map((extraction, index) => (
-                  <div
-                    key={index}
-                    className="bg-muted p-3 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium">{extraction.raw_text}</p>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                        {(extraction.relevance_score * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{extraction.meaning}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!selectedFile?.analysis && (
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <FiFile className="w-12 h-12 mb-2" />
-            <p>Select a file to view analysis</p>
-          </div>
-        )}
       </div>
 
-      {/* Details Panel */}
-      <div className="w-full md:w-1/3 overflow-hidden flex flex-col bg-gray-50">
-        <div className="p-4 overflow-y-auto">
-          {selectedItem ? (
-            <div>
-              <h1 className="text-2xl font-bold mb-4 text-gray-800">{selectedItem.title}</h1>
-              <p className="text-gray-600 mb-6">{selectedItem.description}</p>
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-2 text-gray-800">Extracted Evidence</h2>
-                  <div className="space-y-2">
-                    {selectedItem.evidence?.map((evidence, index) => (
-                      <div key={index} className="p-3 bg-white rounded-lg border border-gray-200">
-                        <p className="text-gray-700">{evidence}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="border-t pt-4">
-                  <h2 className="text-lg font-semibold mb-2 text-gray-800">Analysis Details</h2>
-                  <ul className="space-y-2 text-gray-600">
-                    <li>Category: Evidence Analysis</li>
-                    <li>Created: {new Date().toLocaleDateString()}</li>
-                    <li>Status: Active</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[calc(100vh-200px)] text-center text-gray-500">
-              <p>Select an item to view details</p>
-            </div>
-          )}
-        </div>
+      {/* Right Column - Detail View */}
+      <div className="w-1/3 overflow-y-auto bg-white">
+        {renderDetailPanel()}
       </div>
     </div>
   );
