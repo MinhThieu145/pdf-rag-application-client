@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
 import { API_BASE_URL } from '@/config';
 import { useEvidenceStore } from '@/store/evidenceStore';
+import { useEssayStore } from '@/store/essayStore';
 
 // Configure axios instance
 const api = axios.create({
@@ -228,9 +229,64 @@ export default function Page() {
   ]);
 
   const { selectedExtractions, addExtraction, removeExtraction } = useEvidenceStore();
+  const { essayStructure, setEssayStructure, isGenerating, setIsGenerating } = useEssayStore();
   const [extractions, setExtractions] = useState<ApiEvidence[]>([]);
   const [selectedExtraction, setSelectedExtraction] = useState<ApiEvidence | null>(null);
   const [groupedExtractions, setGroupedExtractions] = useState<{ [key: string]: ApiEvidence[] }>({});
+
+  const handleGenerateEssay = async () => {
+    if (selectedExtractions.length === 0) {
+      toast.error("Please select some evidence first");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      console.log("Selected extractions:", selectedExtractions);
+      const combinedContext = selectedExtractions.map(e => e.raw_text).join("\n\n");
+      console.log("Combined context length:", combinedContext.length);
+
+      console.log("Making request to essay generation endpoint...");
+      const response = await fetch(`${API_BASE_URL}/api/essay-generation/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          context: combinedContext,
+          topic: "Write an essay about the selected evidence", // placeholder
+          word_count: 1000 // placeholder
+        }),
+      });
+
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData?.detail || 'Failed to generate essay');
+      }
+
+      const data = await response.json();
+      console.log("Received essay structure:", data);
+      
+      setEssayStructure(data);
+      toast.success("Essay structure generated successfully!");
+    } catch (error) {
+      console.error('Error generating essay:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate essay");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Load last essay structure from localStorage on mount
+  useEffect(() => {
+    const lastEssayStructure = localStorage.getItem('lastEssayStructure');
+    if (lastEssayStructure) {
+      setEssayStructure(JSON.parse(lastEssayStructure));
+    }
+  }, []);
 
   // Handle mounting to prevent hydration errors
   useEffect(() => {
@@ -552,14 +608,27 @@ export default function Page() {
           <div className="sticky top-0 z-10 bg-white py-2">
             <div className="flex justify-end pr-2">
               <button
-                onClick={() => {/* TODO: Implement essay writing */}}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white-50 text-xs font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md"
+                onClick={handleGenerateEssay}
+                disabled={isGenerating || selectedExtractions.length === 0}
+                className={`flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <span>Write Essay</span>
-                <span className="flex items-center justify-center w-4 h-4 bg-white text-white-50 text-xs font-medium rounded-full">
-                  ({selectedExtractions.length})
-                </span>
+                {isGenerating ? (
+                  <>
+                    <FiLoader className="animate-spin" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <FiFileText />
+                    <span>Generate Essay</span>
+                  </>
+                )}
               </button>
+              {essayStructure && (
+                <span className="text-green-600">
+                  ✓ Essay structure ready
+                </span>
+              )}
             </div>
           </div>
         )}
