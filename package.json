@@ -9,8 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@radix-ui/react-slot": "^1.1.1",
+    "@editorjs/delimiter": "^1.4.2",
+    "@editorjs/editorjs": "^2.30.7",
+    "@editorjs/header": "^2.8.8",
+    "@editorjs/image": "^2.10.1",
+    "@editorjs/list": "^2.0.2",
+    "@editorjs/paragraph": "^2.11.7",
+    "@editorjs/quote": "^2.7.6",
+    "@editorjs/table": "^2.4.3",
     "@reduxjs/toolkit": "^2.5.0",
+    "@tailwindcss/typography": "^0.5.16",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -36,6 +44,7 @@
     "remark-mermaid": "^0.2.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
+    "use-debounce": "^10.0.4",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
