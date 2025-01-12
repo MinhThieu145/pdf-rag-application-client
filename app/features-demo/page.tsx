@@ -14,14 +14,15 @@ export default function FeaturesDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Editor Demo</h1>
-        <div className="flex gap-6 h-[calc(100vh-12rem)]">
-          <div className="flex-1 bg-white rounded-lg shadow-lg p-6">
-            <Editor onChange={handleEditorChange} />
+    <div className="h-full bg-gray-50 overflow-hidden">
+      <div className="h-full max-w-screen-2xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex gap-6 h-full">
+          <div className="w-2/3 bg-white rounded-xl border-2 border-gray-200 dark:border-gray-800 p-6 overflow-hidden">
+            <div className="h-full overflow-auto">
+              <Editor onChange={handleEditorChange} />
+            </div>
           </div>
-          <div className="w-[450px] bg-white rounded-lg shadow-lg">
+          <div className="w-1/3 bg-white rounded-xl border-2 border-gray-200 dark:border-gray-800 overflow-hidden">
             <Chat />
           </div>
         </div>

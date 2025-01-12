@@ -17,9 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className={`${inter.className} min-h-screen bg-gray-50 dark:bg-gray-900`}>
+      <body className={`${inter.className} h-full flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900`}>
         <Navigation />
-        <main className="mt-16 p-4">
+        <main className="flex-1 overflow-hidden">
           {children}
         </main>
       </body>
