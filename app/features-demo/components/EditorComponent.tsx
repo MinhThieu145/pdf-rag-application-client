@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useId, useState } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import type { OutputData } from '@editorjs/editorjs';
+import { useEssayStore } from '@/store/essayStore';
+import type { EssayStructure } from '@/store/essayStore';
 
 interface EditorProps {
   onChange?: (data: OutputData) => void;
@@ -11,42 +13,211 @@ interface EditorProps {
 const LOCAL_STORAGE_KEY = 'editorData';
 
 const DEFAULT_INITIAL_DATA = {
-  blocks: [
-    {
-      type: "header",
-      data: {
-        text: "Welcome to the Editor",
-        level: 1
-      }
-    },
-    {
-      type: "paragraph",
-      data: {
-        text: "Start writing your content here..."
-      }
-    }
-  ],
+  blocks: [],
   version: "2.28.2"
 };
 
-// Keep track of initialized editors globally
+const createEssayBlocks = (essayStructure: EssayStructure | null) => {
+  if (!essayStructure) return null;
+
+  const blocks = [];
+  let blockId = 1;
+
+  // Add essay planning
+  if (essayStructure.essay_planning) {
+    blocks.push(
+      {
+        id: `planning-header-${blockId++}`,
+        type: "header",
+        data: {
+          text: "Essay Planning",
+          level: 1
+        }
+      },
+      {
+        id: `planning-content-${blockId++}`,
+        type: "paragraph",
+        data: {
+          text: essayStructure.essay_planning || ''
+        }
+      }
+    );
+  }
+
+  // Add introduction
+  if (essayStructure.essay_structure?.introduction) {
+    blocks.push(
+      {
+        id: `intro-header-${blockId++}`,
+        type: "header",
+        data: {
+          text: "Introduction",
+          level: 2
+        }
+      },
+      {
+        id: `intro-content-${blockId++}`,
+        type: "paragraph",
+        data: {
+          text: essayStructure.essay_structure.introduction.content || ''
+        }
+      },
+      {
+        id: `intro-purpose-${blockId++}`,
+        type: "paragraph",
+        data: {
+          text: `Purpose: ${essayStructure.essay_structure.introduction.purpose || ''}`
+        }
+      }
+    );
+  }
+
+  // Add body paragraphs
+  if (essayStructure.essay_structure?.body_paragraphs) {
+    blocks.push({
+      id: `body-header-${blockId++}`,
+      type: "header",
+      data: {
+        text: "Body Paragraphs",
+        level: 2
+      }
+    });
+
+    const { body_paragraphs } = essayStructure.essay_structure;
+    const { paragraphOrder } = useEssayStore.getState();
+    const orderedParagraphs = paragraphOrder.length === body_paragraphs.length
+      ? paragraphOrder.map(index => body_paragraphs[index])
+      : body_paragraphs;
+
+    orderedParagraphs.forEach((para, index) => {
+      if (para) {
+        blocks.push(
+          {
+            id: `body-content-${index}-${blockId++}`,
+            type: "paragraph",
+            data: {
+              text: para.content || ''
+            }
+          },
+          {
+            id: `body-purpose-${index}-${blockId++}`,
+            type: "paragraph",
+            data: {
+              text: `Purpose: ${para.purpose || ''}`
+            }
+          }
+        );
+      }
+    });
+  }
+
+  // Add conclusion
+  if (essayStructure.essay_structure?.conclusion) {
+    blocks.push(
+      {
+        id: `conclusion-header-${blockId++}`,
+        type: "header",
+        data: {
+          text: "Conclusion",
+          level: 2
+        }
+      },
+      {
+        id: `conclusion-content-${blockId++}`,
+        type: "paragraph",
+        data: {
+          text: essayStructure.essay_structure.conclusion.content || ''
+        }
+      },
+      {
+        id: `conclusion-purpose-${blockId++}`,
+        type: "paragraph",
+        data: {
+          text: `Purpose: ${essayStructure.essay_structure.conclusion.purpose || ''}`
+        }
+      }
+    );
+  }
+
+  return {
+    time: Date.now(),
+    blocks,
+    version: "2.28.2"
+  };
+};
+
 const initializedEditors = new Set<string>();
 
 export default function EditorComponent({ onChange, initialData }: EditorProps = {}) {
   const editorRef = useRef<any>();
+  const isInitializedRef = useRef(false);
   const holderId = useId();
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { essayStructure } = useEssayStore();
+
+  const getStoredData = () => {
+    try {
+      const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        console.log('Found stored data:', parsedData);
+        return parsedData;
+      }
+    } catch (error) {
+      console.error('Error reading from localStorage:', error);
+    }
+    return null;
+  };
+
+  const handleEditorChange = async (api: any) => {
+    try {
+      if (!api) {
+        console.log('No editor API available');
+        return;
+      }
+
+      console.log('Attempting to save editor content...');
+      const outputData = await api.save();
+      
+      if (!outputData) {
+        console.warn('Save returned no data');
+        return;
+      }
+
+      console.log('Save successful, raw data:', JSON.stringify(outputData, null, 2));
+
+      if (!Array.isArray(outputData.blocks)) {
+        console.warn('No blocks array in output data');
+        return;
+      }
+
+      const validData = {
+        time: Date.now(),
+        blocks: outputData.blocks,
+        version: outputData.version
+      };
+
+      console.log('Saving data to localStorage:', JSON.stringify(validData, null, 2));
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(validData));
+      
+      if (onChange) {
+        console.log('Calling onChange handler');
+        onChange(validData);
+      }
+    } catch (error) {
+      console.error('Error in handleEditorChange:', error);
+    }
+  };
 
   useEffect(() => {
     let editor: any = null;
 
     const initEditor = async () => {
-      // Check if this editor instance is already initialized
       if (initializedEditors.has(holderId) || editorRef.current) {
         return;
       }
 
       try {
+        console.log('Initializing editor...');
         const [
           { default: EditorJS },
           { default: Header },
@@ -65,28 +236,20 @@ export default function EditorComponent({ onChange, initialData }: EditorProps =
           import('@editorjs/delimiter')
         ]);
 
-        // Only proceed if another initialization hasn't happened
         if (initializedEditors.has(holderId)) {
           return;
         }
 
-        // Mark this editor as initialized
         initializedEditors.add(holderId);
 
-        // Load data from localStorage only on first initialization
-        let savedData;
-        if (!isInitialized) {
-          try {
-            const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (storedData) {
-              savedData = JSON.parse(storedData);
-            }
-          } catch (error) {
-            console.error('Error loading editor data:', error);
-          }
-        }
+        // Priority: localStorage > essayData > initialData > empty data
+        const storedData = getStoredData();
+        const essayData = createEssayBlocks(essayStructure);
+        const initialEditorData = storedData || essayData || initialData || DEFAULT_INITIAL_DATA;
+        
+        console.log('Using initial editor data:', initialEditorData);
 
-        editor = new EditorJS({
+        const editorConfig = {
           holder: holderId,
           tools: {
             header: {
@@ -142,24 +305,35 @@ export default function EditorComponent({ onChange, initialData }: EditorProps =
               },
             }
           },
-          placeholder: 'Click here to start writing...',
-          inlineToolbar: ['bold', 'italic', 'link'],
-          data: savedData || initialData || DEFAULT_INITIAL_DATA,
-          onChange: async () => {
-            try {
-              const savedData = await editor.save();
-              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(savedData));
-              onChange?.(savedData);
-            } catch (error) {
-              console.error('Error saving editor data:', error);
+          onReady: () => {
+            console.log('Editor.js is ready to work!');
+            isInitializedRef.current = true;
+          },
+          onChange: (api: any) => {
+            console.log('Content changed, getting editor instance...');
+            if (isInitializedRef.current && editorRef.current) {
+              console.log('Editor initialized, handling change...');
+              handleEditorChange(editorRef.current);
+            } else {
+              console.log('Editor not ready:', { 
+                isInitialized: isInitializedRef.current, 
+                hasEditor: !!editorRef.current 
+              });
             }
           },
-        });
+          autofocus: false,
+          placeholder: 'Click here to start writing...',
+          inlineToolbar: ['bold', 'italic', 'link'],
+          data: initialEditorData,
+        };
 
+        console.log('Editor configuration:', JSON.stringify(editorConfig, null, 2));
+        editor = new EditorJS(editorConfig);
         editorRef.current = editor;
-        setIsInitialized(true);
+
       } catch (error) {
         console.error('Error initializing editor:', error);
+        console.error('Stack trace:', error.stack);
       }
     };
 
@@ -167,12 +341,14 @@ export default function EditorComponent({ onChange, initialData }: EditorProps =
 
     return () => {
       if (editor && typeof editor.destroy === 'function') {
+        console.log('Destroying editor instance');
         editor.destroy();
         editorRef.current = null;
+        isInitializedRef.current = false;
         initializedEditors.delete(holderId);
       }
     };
-  }, [onChange, initialData, holderId, isInitialized]);
+  }, [onChange, initialData, holderId, essayStructure]);
 
   return (
     <div className="relative w-full max-w-screen-lg mx-auto bg-white">
