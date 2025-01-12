@@ -21,7 +21,7 @@ const createEssayBlocks = (essayStructure: EssayStructure | null) => {
   if (!essayStructure) return null;
 
   const blocks = [];
-  let blockId = 1;
+  let blockId = Date.now();
 
   // Add essay planning
   if (essayStructure.essay_planning) {
@@ -151,6 +151,7 @@ const initializedEditors = new Set<string>();
 export default function EditorComponent({ onChange, initialData }: EditorProps = {}) {
   const editorRef = useRef<any>();
   const isInitializedRef = useRef(false);
+  const previousEssayRef = useRef<EssayStructure | null>(null);
   const holderId = useId();
   const { essayStructure } = useEssayStore();
 
@@ -207,6 +208,58 @@ export default function EditorComponent({ onChange, initialData }: EditorProps =
       console.error('Error in handleEditorChange:', error);
     }
   };
+
+  // Effect to handle essay structure changes
+  useEffect(() => {
+    const handleEssayStructureChange = async () => {
+      if (!editorRef.current || !isInitializedRef.current) return;
+
+      // Skip if it's the same structure
+      if (previousEssayRef.current === essayStructure) return;
+      previousEssayRef.current = essayStructure;
+
+      try {
+        // Get current editor content
+        const currentContent = await editorRef.current.save();
+        
+        if (!currentContent || !Array.isArray(currentContent.blocks)) {
+          console.warn('No valid current content');
+          return;
+        }
+
+        // Create blocks from new essay structure
+        const newEssayData = createEssayBlocks(essayStructure);
+        if (!newEssayData || !Array.isArray(newEssayData.blocks)) {
+          console.warn('No valid new essay data');
+          return;
+        }
+
+        // Combine current content with new blocks
+        const combinedBlocks = [
+          ...currentContent.blocks,
+          // Add a delimiter between old and new content
+          {
+            id: `delimiter-${Date.now()}`,
+            type: 'delimiter',
+            data: {}
+          },
+          ...newEssayData.blocks
+        ];
+
+        // Update editor with combined content
+        await editorRef.current.render({
+          blocks: combinedBlocks,
+          version: currentContent.version
+        });
+
+        console.log('Editor content updated with new essay structure');
+      } catch (error) {
+        console.error('Error updating editor content:', error);
+      }
+    };
+
+    handleEssayStructureChange();
+  }, [essayStructure]);
 
   useEffect(() => {
     let editor: any = null;
@@ -308,6 +361,7 @@ export default function EditorComponent({ onChange, initialData }: EditorProps =
           onReady: () => {
             console.log('Editor.js is ready to work!');
             isInitializedRef.current = true;
+            previousEssayRef.current = essayStructure;
           },
           onChange: (api: any) => {
             console.log('Content changed, getting editor instance...');
