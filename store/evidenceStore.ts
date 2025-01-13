@@ -1,34 +1,38 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { ApiEvidence } from '../types/evidence';
+import { ApiEvidence } from '../app/evidence-extraction/types';
 
-interface EvidenceStore {
+interface EvidenceState {
   selectedExtractions: ApiEvidence[];
-  addExtraction: (extraction: ApiEvidence) => void;
   removeExtraction: (extraction: ApiEvidence) => void;
+  addExtraction: (extraction: ApiEvidence) => void;
   clearExtractions: () => void;
+  isSelected: (extraction: ApiEvidence) => boolean;
 }
 
-export const useEvidenceStore = create<EvidenceStore>()(
-  persist(
-    (set) => ({
-      selectedExtractions: [],
-      addExtraction: (extraction) =>
-        set((state) => ({
-          selectedExtractions: [...state.selectedExtractions, extraction],
-        })),
-      removeExtraction: (extraction) =>
-        set((state) => ({
-          selectedExtractions: state.selectedExtractions.filter(
-            (item) => item.raw_text !== extraction.raw_text
-          ),
-        })),
-      clearExtractions: () => set({ selectedExtractions: [] }),
-    }),
-    {
-      name: 'evidence-storage', // unique name for localStorage key
-      storage: createJSONStorage(() => localStorage), // use localStorage
-      partialize: (state) => ({ selectedExtractions: state.selectedExtractions }), // only persist selectedExtractions
+const useEvidenceStore = create<EvidenceState>()((set, get) => ({
+  selectedExtractions: [],
+  removeExtraction: (extraction) => {
+    set((state) => ({
+      selectedExtractions: state.selectedExtractions.filter(
+        (e) => !(e.raw_text === extraction.raw_text && e.document_name === extraction.document_name)
+      ),
+    }));
+  },
+  addExtraction: (extraction) => {
+    if (!get().isSelected(extraction)) {
+      set((state) => ({
+        selectedExtractions: [...state.selectedExtractions, extraction],
+      }));
     }
-  )
-);
+  },
+  clearExtractions: () => {
+    set({ selectedExtractions: [] });
+  },
+  isSelected: (extraction) => {
+    return get().selectedExtractions.some(
+      (e) => e.raw_text === extraction.raw_text && e.document_name === extraction.document_name
+    );
+  },
+}));
+
+export default useEvidenceStore;
