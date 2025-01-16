@@ -2,36 +2,41 @@ import { create } from 'zustand';
 import { ApiEvidence } from '../app/evidence-extraction/types';
 
 interface EvidenceState {
-  selectedExtractions: ApiEvidence[];
-  removeExtraction: (extraction: ApiEvidence) => void;
-  addExtraction: (extraction: ApiEvidence) => void;
+  selectedExtractions: Set<string>;
+  removeExtraction: (id: string) => void;
+  addExtraction: (id: string) => void;
   clearExtractions: () => void;
-  isSelected: (extraction: ApiEvidence) => boolean;
+  isSelected: (id: string) => boolean;
 }
 
 const useEvidenceStore = create<EvidenceState>()((set, get) => ({
-  selectedExtractions: [],
-  removeExtraction: (extraction) => {
-    set((state) => ({
-      selectedExtractions: state.selectedExtractions.filter(
-        (e) => !(e.raw_text === extraction.raw_text && e.document_name === extraction.document_name)
-      ),
-    }));
+  selectedExtractions: new Set<string>(),
+  removeExtraction: (id) => {
+    console.log('Store: Removing extraction', id);
+    set((state) => {
+      const newSet = new Set(state.selectedExtractions);
+      newSet.delete(id);
+      console.log('Store: New set after remove:', Array.from(newSet));
+      return { selectedExtractions: newSet };
+    });
   },
-  addExtraction: (extraction) => {
-    if (!get().isSelected(extraction)) {
-      set((state) => ({
-        selectedExtractions: [...state.selectedExtractions, extraction],
-      }));
-    }
+  addExtraction: (id) => {
+    console.log('Store: Adding extraction', id);
+    set((state) => {
+      const newSet = new Set(state.selectedExtractions);
+      newSet.add(id);
+      console.log('Store: New set after add:', Array.from(newSet));
+      return { selectedExtractions: newSet };
+    });
   },
   clearExtractions: () => {
-    set({ selectedExtractions: [] });
+    console.log('Store: Clearing all extractions');
+    set({ selectedExtractions: new Set() });
   },
-  isSelected: (extraction) => {
-    return get().selectedExtractions.some(
-      (e) => e.raw_text === extraction.raw_text && e.document_name === extraction.document_name
-    );
+  isSelected: (id) => {
+    const result = get().selectedExtractions.has(id);
+    console.log('Store: Checking if selected', id, result);
+    return result;
   },
 }));
 

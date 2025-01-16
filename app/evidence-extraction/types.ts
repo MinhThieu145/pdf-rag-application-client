@@ -7,6 +7,8 @@ export interface FileWithProgress {
   analysis?: PaperAnalysis;
   parseResult?: JsonData;
   status?: string;
+  error?: string;
+  folder: string;
 }
 
 export interface GroupItem {
@@ -107,9 +109,12 @@ export interface ApiEvidence {
   document_name: string;
   file_name: string;
   essay_topic: string;
+  refined_topic: string;
   raw_text: string;
-  meaning: string;
-  relevance_score: number;
+  category: string;
+  reasoning: string;
+  strength: string;
+  strength_justification: string;
 }
 
 export interface EssayGenerationRequest {

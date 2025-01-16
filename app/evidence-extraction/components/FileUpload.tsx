@@ -1,90 +1,187 @@
-'use client';
-
-import React, { useRef } from 'react';
-import { FiUpload, FiFile, FiTrash2 } from 'react-icons/fi';
+import React from 'react';
+import { useDropzone } from 'react-dropzone';
+import { FiUploadCloud, FiFile, FiX, FiCheck, FiLoader, FiMoreVertical } from 'react-icons/fi';
 import { FileWithProgress } from '../types';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface FileUploadProps {
   files: FileWithProgress[];
-  onFilesAdded: (files: File[]) => void;
-  onFileRemove: (fileId: string) => void;
+  onFilesSelected: (files: File[]) => void;
+  onRemoveFile: (id: string) => void;
+  onProcessFiles: () => void;
+  onQueryChange?: (query: string) => void;
 }
 
-const formatBytes = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} bytes`;
-  else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-  else if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  else return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-};
+export default function FileUpload({ 
+  files, 
+  onFilesSelected, 
+  onRemoveFile, 
+  onProcessFiles,
+  onQueryChange
+}: FileUploadProps) {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: onFilesSelected,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'text/plain': ['.txt'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+    },
+    multiple: true
+  });
 
-export default function FileUpload({ files, onFilesAdded, onFileRemove }: FileUploadProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    onFilesAdded(droppedFiles);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return <FiFile className="w-5 h-5 text-red-500" />;
+      case 'doc':
+      case 'docx':
+        return <FiFile className="w-5 h-5 text-blue-500" />;
+      case 'txt':
+        return <FiFile className="w-5 h-5 text-gray-500" />;
+      default:
+        return <FiFile className="w-5 h-5 text-gray-400" />;
+    }
   };
 
   return (
-    <div className="p-4">
-      <div
-        className="border-2 border-dashed rounded-lg p-4 mb-4 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={(e) => e.target.files && onFilesAdded(Array.from(e.target.files))}
-          className="hidden"
-          accept=".pdf,.doc,.docx,.txt"
-          multiple
-        />
-        <div className="flex flex-col items-center justify-center text-center">
-          <FiUpload className="w-8 h-8 mb-2 text-blue-500" />
-          <p className="text-sm font-medium text-gray-600">Drop your document here</p>
-          <p className="text-xs text-gray-400 mt-1">or click to browse</p>
+    <div className="flex flex-col h-full bg-white rounded-lg ">
+      <div className="px-3 flex flex-col space-y-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Upload Documents</h2>
+          <p className="text-xs text-gray-500">Supported: PDF, TXT, DOC, DOCX</p>
         </div>
+        {files.length > 0 && (
+          <>
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Enter your query..."
+                onChange={(e) => onQueryChange?.(e.target.value)}
+                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 placeholder:text-gray-400"
+              />
+            </div>
+            <Button 
+              onClick={onProcessFiles}
+              size="sm"
+              disabled={files.some(f => f.status === 'uploading')}
+              className="w-full bg-black hover:bg-black/90 text-white-100"
+              style={{ borderRadius: '4px' }}
+            >
+              Update Topic
+            </Button>
+          </>
+        )}
       </div>
 
-      <div className="space-y-2">
-        {files.map((file) => (
-          <div key={file.id} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3">
-                <FiFile className="text-xl text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800 truncate max-w-[120px]">
-                    {file.file.name}
-                  </p>
-                  <p className="text-xs text-gray-400">{file.size}</p>
+      <div className="p-3 flex-1 overflow-auto space-y-2">
+        <div
+          {...getRootProps()}
+          className={`
+            relative flex flex-col items-center justify-center h-28 border-2 border-dashed 
+            rounded-xl transition-all duration-200
+            ${isDragActive 
+              ? 'border-primary bg-primary/5' 
+              : 'border-gray-300 hover:border-primary/50 hover:bg-gray-50'
+            }
+          `}
+        >
+          <input {...getInputProps()} />
+          <FiUploadCloud className={`w-8 h-8 mb-2 transition-colors duration-200 ${
+            isDragActive ? 'text-primary' : 'text-gray-400'
+          }`} />
+          {isDragActive ? (
+            <p className="text-sm font-medium text-primary">Drop your files here</p>
+          ) : (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Drop files here</span>
+              {' '}or{' '}
+              <span className="text-primary">browse</span>
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {files.map((fileInfo) => (
+            <div
+              key={fileInfo.id}
+              className="group relative flex flex-col bg-gray-50 rounded-xl p-3 hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  {getFileIcon(fileInfo.file.name)}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {fileInfo.file.name}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xs flex items-center ${
+                          fileInfo.status === 'complete' ? 'text-green-500' :
+                          fileInfo.status === 'error' ? 'text-red-500' :
+                          'text-primary'
+                        }`}>
+                          {fileInfo.status === 'complete' && <FiCheck className="w-3 h-3 mr-1" />}
+                          {fileInfo.status === 'uploading' && <FiLoader className="w-3 h-3 mr-1 animate-spin" />}
+                          {fileInfo.status === 'error' && <FiX className="w-3 h-3 mr-1" />}
+                          {fileInfo.status === 'uploading' && `${Math.round(fileInfo.progress)}%`}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 "
+                            >
+                              <FiMoreVertical className="w-5 h-5 text-gray-500 " />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[160px] bg-white-100 border-y rounded-xl overflow-hidden p-1">
+                            <DropdownMenuItem 
+                              className="cursor-pointer focus:bg-gray-100 focus:text-black data-[highlighted]:bg-gray-100 mx-1 my-1 text-black"
+                              style={{ borderRadius: '4px' }}
+                            >
+                              Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => onRemoveFile(fileInfo.id)}
+                              className="cursor-pointer text-red-600 focus:bg-gray-100 focus:text-red-600 data-[highlighted]:bg-red-50 mx-1 mb-1"
+                              style={{ borderRadius: '4px' }}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-500 mt-0.5">
+                      <span>{fileInfo.size}</span>
+                      <span>•</span>
+                      <span>{new Date(fileInfo.file.lastModified).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'UTC'
+                      })}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={() => onFileRemove(file.id)}
-                className="text-gray-400 hover:text-red-500 transition-colors"
-              >
-                <FiTrash2 className="w-4 h-4" />
-              </button>
+              {fileInfo.status === 'uploading' && (
+                <Progress value={fileInfo.progress} className="h-1 mt-2" />
+              )}
             </div>
-            {file.progress < 100 && (
-              <div className="mt-2">
-                <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 transition-all duration-300"
-                    style={{ width: `${file.progress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

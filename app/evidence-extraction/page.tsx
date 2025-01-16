@@ -32,12 +32,20 @@ export default function Page() {
   const [selectedExtraction, setSelectedExtraction] = useState<ApiEvidence | null>(null);
   const [extractions, setExtractions] = useState<ApiEvidence[]>([]);
   const [groupedExtractions, setGroupedExtractions] = useState<{ [key: string]: ApiEvidence[] }>({});
+  const [currentTopic, setCurrentTopic] = useState<string>("Analyze the key findings and methodology of this research paper");
+
+  const selectedExtractions = useEvidenceStore(state => {
+    console.log('Page: Selected extractions updated:', Array.from(state.selectedExtractions));
+    return state.selectedExtractions;
+  });
+  const addExtraction = useEvidenceStore(state => state.addExtraction);
+  const removeExtraction = useEvidenceStore(state => state.removeExtraction);
+
+  const essayState = useEssayStore.getState();
+  const { essayStructure, setEssayStructure, isGenerating, setIsGenerating } = essayState;
 
   const evidenceState = useEvidenceStore.getState();
-  const essayState = useEssayStore.getState();
-
-  const { selectedExtractions, addExtraction, removeExtraction } = evidenceState;
-  const { essayStructure, setEssayStructure, isGenerating, setIsGenerating } = essayState;
+  const { selectedExtractions: selectedExtractionsSet, addExtraction: addExtractionToSet, removeExtraction: removeExtractionFromSet } = evidenceState;
 
   // Fetch evidence data from API and update state
   const fetchEvidence = async (setLoadingState = true) => {
@@ -61,11 +69,15 @@ export default function Page() {
         return acc;
       }, {} as { [key: string]: ApiEvidence[] });
 
-      // Sort extractions within each group by relevance_score
+      // Sort extractions within each group by strength
       Object.keys(grouped).forEach(key => {
-        grouped[key].sort((a, b) => b.relevance_score - a.relevance_score);
+        grouped[key].sort((a, b) => {
+          const strengthOrder = { 'High': 3, 'Moderate': 2, 'Low': 1 } as const;
+          return (strengthOrder[b.strength as keyof typeof strengthOrder] || 0) - (strengthOrder[a.strength as keyof typeof strengthOrder] || 0);
+        });
       });
 
+      console.log('Grouped evidence:', grouped);  
       setGroupedExtractions(grouped);
       setExtractions(response.data);
       return true;
@@ -88,10 +100,14 @@ export default function Page() {
         // Convert the fetched files to our file format
         const existingFiles = data.files.map((file: any) => ({
           id: uuidv4(),
-          file: { name: file.name } as File,
+          file: { 
+            name: file.pdf_name,
+            lastModified: new Date(file.last_modified).getTime()
+          } as File,
           progress: 100,
-          size: formatBytes(file.size || 0),
-          status: 'complete'
+          size: formatBytes(file.size),
+          status: 'complete',
+          folder: file.folder
         }));
 
         setFiles(existingFiles);
@@ -140,7 +156,8 @@ export default function Page() {
         file,
         progress: 0,
         size: formatBytes(file.size),
-        status: 'queued'
+        status: 'queued',
+        folder: '' // Add the required folder property
       }));
 
       setFiles((prevFiles) => [...prevFiles, ...newFiles]);
@@ -233,13 +250,13 @@ export default function Page() {
           console.log(`Starting GPT analysis for ${fileInfo.file.name}`);
           const processRequest = {
             file_name: fileInfo.file.name,
-            essay_topic: "Analyze the key findings and methodology of this research paper"
+            essay_topic: currentTopic
           };
 
           const processResponse = await api.post('/raw-extract', processRequest);
 
-          if (!processResponse.data?.result?.analysis) {
-            throw new Error('Analysis failed: Invalid response data');
+          if (!processResponse.data) {
+            throw new Error('Analysis failed: No response data');
           }
 
           console.log(`Analysis completed for ${fileInfo.file.name}`);
@@ -251,7 +268,7 @@ export default function Page() {
               f.id === fileInfo.id ? {
                 ...f,
                 status: 'complete',
-                analysis: processResponse.data.result.analysis
+                analysis: processResponse.data
               } : f
             )
           );
@@ -315,15 +332,108 @@ export default function Page() {
     }
   };
 
+  const reprocessFiles = async () => {
+    if (files.length === 0) {
+      toast.error('No files to process');
+      return;
+    }
+
+    const toastId = toast.loading('Reprocessing files with new topic...');
+    
+    try {
+      // Process each file sequentially with the new topic
+      for (const fileInfo of files) {
+        try {
+          console.log(`Reprocessing file: ${fileInfo.file.name}`);
+          
+          // Update file status
+          setFiles((prevFiles) =>
+            prevFiles.map((f) =>
+              f.id === fileInfo.id ? { ...f, status: 'analyzing' } : f
+            )
+          );
+
+          // Process with new topic
+          const processRequest = {
+            file_name: fileInfo.file.name,
+            essay_topic: currentTopic
+          };
+
+          const processResponse = await api.post('/raw-extract', processRequest);
+
+          if (!processResponse.data) {
+            throw new Error('Analysis failed: No response data');
+          }
+
+          console.log(`Analysis completed for ${fileInfo.file.name}`);
+          toast.success(`Analysis completed: ${fileInfo.file.name}`, { id: toastId });
+
+          // Update final state after successful analysis
+          setFiles((prevFiles) =>
+            prevFiles.map((f) =>
+              f.id === fileInfo.id ? {
+                ...f,
+                status: 'complete',
+                analysis: processResponse.data
+              } : f
+            )
+          );
+
+        } catch (error) {
+          console.error(`Error reprocessing ${fileInfo.file.name}:`, error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          
+          setFiles((prevFiles) =>
+            prevFiles.map((f) =>
+              f.id === fileInfo.id ? {
+                ...f,
+                status: 'analysis_failed'
+              } : f
+            )
+          );
+
+          toast.error(`Failed to reprocess ${fileInfo.file.name}: ${errorMessage}`, { id: toastId });
+          continue; // Move to next file
+        }
+      }
+
+      // Fetch updated evidence after all files are processed
+      await fetchEvidence(false);
+      toast.success('All files reprocessed successfully', { id: toastId });
+    } catch (error) {
+      console.error('Fatal error in file reprocessing:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Fatal error: ${errorMessage}`, { id: toastId });
+    } finally {
+      toast.dismiss(toastId);
+    }
+  };
+
   const handleGenerateEssay = async () => {
-    if (selectedExtractions.length === 0) {
+    if (selectedExtractions.size === 0) {
       toast.error("Please select some evidence first");
       return;
     }
 
     setIsGenerating(true);
+    const toastId = toast.loading('Generating essay...');
+
     try {
-      const combinedContext = selectedExtractions.map(e => e.raw_text).join("\n\n");
+      // Find the actual evidence objects from the selected IDs
+      const selectedEvidenceTexts = Array.from(selectedExtractions).map(id => {
+        // Extract the raw text from the ID (remove document name prefix)
+        const textPart = id.split('-').slice(1).join('-');
+        return extractions.find(e => e.raw_text.startsWith(textPart));
+      }).filter((e): e is ApiEvidence => e !== undefined);
+
+      if (selectedEvidenceTexts.length === 0) {
+        throw new Error('No valid evidence found from selections');
+      }
+
+      // Prepare the context with metadata
+      const contextWithMetadata = selectedEvidenceTexts.map(e => {
+        return `Source: ${e.document_name}\nEvidence: ${e.raw_text}`;
+      }).join('\n\n---\n\n');
 
       const response = await fetch(`${API_BASE_URL}/api/essay-generation/generate`, {
         method: 'POST',
@@ -331,24 +441,29 @@ export default function Page() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          context: combinedContext,
-          topic: "Write an essay about the selected evidence",
-          word_count: 1000
+          context: contextWithMetadata,
+          topic: currentTopic,
+          word_count: 1000,
+          include_citations: true
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        const errorData = JSON.parse(errorText);
-        throw new Error(errorData?.detail || 'Failed to generate essay');
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData?.detail || 'Failed to generate essay');
+        } catch {
+          throw new Error('Failed to generate essay: ' + errorText);
+        }
       }
 
       const data = await response.json();
       setEssayStructure(data);
-      toast.success("Essay structure generated successfully!");
+      toast.success("Essay generated successfully!", { id: toastId });
     } catch (error) {
       console.error('Error generating essay:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to generate essay");
+      toast.error(error instanceof Error ? error.message : "Failed to generate essay", { id: toastId });
     } finally {
       setIsGenerating(false);
     }
@@ -369,11 +484,10 @@ export default function Page() {
     event.stopPropagation();
     const uniqueId = `${extraction.document_name}-${extraction.raw_text}`;
     
-    const isSelected = selectedExtractions.some(e => `${e.document_name}-${e.raw_text}` === uniqueId);
-    if (isSelected) {
-      removeExtraction(extraction);
+    if (selectedExtractions.has(uniqueId)) {
+      removeExtraction(uniqueId);
     } else {
-      addExtraction(extraction);
+      addExtraction(uniqueId);
     }
   };
 
@@ -417,38 +531,46 @@ export default function Page() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Left Column - File Upload */}
-      <div className="w-full md:w-1/5 border-r border-gray-200 overflow-y-auto">
-        <FileUpload
-          files={files}
-          onFilesAdded={handleFiles}
-          onFileRemove={removeFile}
-        />
-      </div>
-
-      {/* Middle Column - Evidence List */}
-      <div className="flex-1 overflow-y-auto p-4 border-l border-r border-gray-200">
-        <div className="max-w-3xl mx-auto">
-          <EvidenceList
-            groupedExtractions={groupedExtractions}
-            selectedExtractions={selectedExtractions}
-            selectedExtraction={selectedExtraction}
-            onExtractionSelect={handleExtractionSelect}
-            onExtractionClick={handleExtractionClick}
-            onGenerateEssay={handleGenerateEssay}
-            isGenerating={isGenerating}
-            essayStructure={essayStructure}
-          />
+    <div className="flex h-screen bg-gray-50">
+      <Toaster position="top-right" />
+      <div className="flex w-full">
+        <div className="w-1/3 h-full">
+          <div className="h-full flex flex-col bg-white rounded-lg shadow-sm m-2">
+            <FileUpload 
+              files={files}
+              onFilesSelected={handleFiles}
+              onRemoveFile={removeFile}
+              onProcessFiles={reprocessFiles}
+              onQueryChange={(query) => setCurrentTopic(query)}
+            />
+          </div>
+        </div>
+        <div className="w-1/3 h-full">
+          <div className="h-full flex flex-col bg-white rounded-lg shadow-sm m-2">
+            <EvidenceList 
+              extractions={extractions}
+              groupedExtractions={groupedExtractions}
+              selectedExtraction={selectedExtraction}
+              setSelectedExtraction={setSelectedExtraction}
+              selectedExtractions={selectedExtractions}
+              addExtraction={addExtraction}
+              removeExtraction={removeExtraction}
+              onGenerateEssay={handleGenerateEssay}
+            />
+          </div>
+        </div>
+        <div className="w-1/3 h-full">
+          <div className="h-full flex flex-col bg-white rounded-lg shadow-sm m-2">
+            <EvidenceDetails
+              selectedExtraction={selectedExtraction}
+              essayStructure={essayStructure}
+              setEssayStructure={setEssayStructure}
+              isGenerating={isGenerating}
+              setIsGenerating={setIsGenerating}
+            />
+          </div>
         </div>
       </div>
-
-      {/* Right Column - Evidence Details */}
-      <div className="w-1/3 overflow-y-auto bg-white">
-        <EvidenceDetails selectedExtraction={selectedExtraction} />
-      </div>
-
-      <Toaster />
     </div>
   );
 }
